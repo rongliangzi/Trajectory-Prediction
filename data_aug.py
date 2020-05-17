@@ -238,12 +238,21 @@ def find_merging_point(x, y, dis, th=0.8):
 
 def plot_intersection(seq1, seq2, path1, path2, intersection):
     fig, axes = plt.subplots(1, 1, figsize=(4, 4))
-    plt.plot(seq1[0], seq1[1], linewidth=seq1[4], color='b')
-    plt.plot(seq2[0], seq2[1], linewidth=seq2[4], color='g')
-    circle = patches.Circle(intersection, 1.0, color='r', zorder=3)
+    axes.patch.set_facecolor("k")
+    plt.plot(seq1[0], seq1[1], linewidth=seq1[4]*2, color='b')
+    plt.plot(seq2[0], seq2[1], linewidth=seq2[4]*2, color='g')
+    circle = patches.Circle(intersection, 0.5, color='r', zorder=3)
     axes.add_patch(circle)
-    plt.xlim(940, 1060)
-    plt.ylim(950, 1070)
+    # set x y range
+    plt.xlim(intersection[0]-15, intersection[0]+15)
+    plt.ylim(intersection[1]-15, intersection[1]+15)
+
+    # remove the white biankuang
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+    plt.margins(0, 0)
+
     plt.savefig('D:/Dev/UCB task/intersection_figs/{} {}.png'.format(path1, path2))
     plt.close()
 
@@ -256,7 +265,7 @@ def find_intersection(seq1, seq2):
     dis = cal_dis(x, y)
     min_dis = dis.min()
 
-    if min_dis > 5:
+    if min_dis > 4:
         # no intersection point
         return [-1, -1]
     intersection = find_merging_point(x, y, dis)
@@ -285,6 +294,7 @@ def main(base_path, dir_name):
                 continue
             else:
                 plot_intersection(seq1, seq2, path1, path2, intersection)
+
     return
 
 
