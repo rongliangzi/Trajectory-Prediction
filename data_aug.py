@@ -7,6 +7,7 @@ import random
 import matplotlib.patches as patches
 import glob
 import os
+import pickle
 
 
 def judge_start(ms, track):
@@ -451,6 +452,7 @@ def main(base_path, dir_name):
                 break
                 '''
 
+    coordinate_dict = dict()
     for i, tracks in enumerate(csv_list):
         for agent, path_name in tracks:
             if path_name in rare_paths:
@@ -458,15 +460,31 @@ def main(base_path, dir_name):
             # plot global image
             # plot_global_image(ref_paths, path_name, intersection_info[path_name], path_name+'_global')
             # from start to end, crop
-            ms = agent.motion_states[agent.time_stamp_ms_first + 10 * 100]
+            ts = agent.time_stamp_ms_first + 10 * 100
+            ms = agent.motion_states[ts]
             theta = math.pi/2 - ms.psi_rad
             plot_rotate_crop(ref_paths, path_name, intersection_info[path_name], str(i) + '_' + path_name+'_50',
                              theta, [ms.x, ms.y])
+            # calculate the relative coordinates of other cars and judge
+            for car, car_path_name in tracks:
+                if ts not in car.motion_states:
+                    continue
+                # get the motion state of other car and judge if they are in the bounding box
+                car_ms = car.motion_states[ts]
+                car_x_rot, car_y_rot = rotate_aug(car_ms.x, car_ms.y, [ms.x, ms.y], theta)
+                new_coor = (car_x_rot - ms.x, car_y_rot - ms.y)
+                if -20 < new_coor[0] < 20 and 0 < new_coor[1] < 40:
+                    if ts not in coordinate_dict:
+                        coordinate_dict[ts] = dict()
+                    else:
+                        coordinate_dict[ts][car.track_id] = new_coor
             # for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last, 100):
             #     # judge if meeting requirements of starting
             #     ms = agent.motion_states[ts]
         break
-    return
+    pickle_file = open('D:/Dev/UCB task/pickle/new_coordinate.pkl', 'wb')
+    pickle.dump(coordinate_dict, pickle_file)
+    pickle_file.close()
 
 
 if __name__ == '__main__':
