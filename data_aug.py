@@ -5,6 +5,8 @@ import math
 import matplotlib.pyplot as plt
 import random
 import matplotlib.patches as patches
+import glob
+import os
 
 
 def judge_start(ms, track):
@@ -19,7 +21,7 @@ def judge_start(ms, track):
     elif ms.x > 1039 and ms.y > 1007 and ms.vx <= 0:
         return 9
     elif ms.y > 1017 and ms.vy <= 0:
-        for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last, 1000):
+        for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last, 100):
             motion_state = track.motion_states[ts]
             if motion_state.x < 1011 and 1013 < motion_state.y < 1025:
                 return 14
@@ -85,34 +87,15 @@ def fit_ref_path(xy, k, path_w, beta_dict, poly_dict):
     avg_path_w = np.average(path_w)
 
     # reverse the direction
-    if k in ['6-1', '7-10', '9-1', '9-4', '9-5', '9-10', '6-4', '7-11', '6-10', '6-11', '9-11']:
+    if k in ['6-1', '7-10', '9-1', '9-4', '9-5', '9-10', '6-4', '7-11', '6-10', '6-11', '9-11', '13-4']:
         x_back = x_back[::-1]
         y_back = y_back[::-1]
 
     poly_func = ''
-    '''
-    for i in range(poly+1):
-        if i != 0 and z1[i] > 0:
-            poly_func += '+'
-        poly_func += '{:.3e}'.format(z1[i])
-        if i < poly:
-            poly_func += 'x'
-        if i < poly-1:
-            poly_func += '^{}'.format(int(poly-i))
-    if abs(beta + math.pi / 6) < 0.02:
-        rot = '-pi/6'
-    elif abs(beta - math.pi / 4) < 0.02:
-        rot = 'pi/4'
-    elif abs(beta) < 0.02:
-        rot = '0'
-    elif abs(beta - math.pi / 12)<0.02:
-        rot = 'pi/12'
-    poly_func += ' ('+rot+' clockwise rotation)'
-    '''
     return [x_back, y_back, x, y, avg_path_w], poly_func
 
 
-def get_ref_paths(base_path, dir_name, csv_num):
+def get_ref_paths(base_path, dir_name):
     '''
     :param base_path:
     :param dir_name:
@@ -120,6 +103,7 @@ def get_ref_paths(base_path, dir_name, csv_num):
     :return: all ref paths in a dict. each item includes [x, y, raw x, raw y, path w], poly func in str
     '''
     trajectory = dict()
+    csv_list = list()
     f = open('D:/Dev/UCB task/poly.txt', 'r')
     lines = f.readlines()
     ref_index_dict = dict()
@@ -127,10 +111,12 @@ def get_ref_paths(base_path, dir_name, csv_num):
         sp = line.split(',')
         ref_index_dict[sp[1]+'-'+sp[2]] = sp[0]
     # collect data to construct a dict from all csv
-    for index in ['0' + str(i) for i in range(10)] + [str(i) for i in range(10, csv_num+1)]:
-        csv_name = base_path + dir_name + "vehicle_tracks_0" + index + ".csv"
+    paths = glob.glob(os.path.join(base_path + dir_name, '*.csv'))
+    paths.sort()
+    for csv_name in paths:
         track_dictionary = dataset_reader.read_tracks(csv_name)
         tracks = dict_utils.get_value_list(track_dictionary)
+        agent_path = list()
         for agent in tracks:
             first_ms = agent.motion_states[agent.time_stamp_ms_first]
             last_ms = agent.motion_states[agent.time_stamp_ms_last]
@@ -140,31 +126,33 @@ def get_ref_paths(base_path, dir_name, csv_num):
                 pass
             else:
                 k = str(start_area) + '-' + str(end_area)
+                agent_path.append([agent, k])
                 if k not in trajectory:
                     trajectory[k] = [agent]
                 elif k not in ['12-10', '13-10']:
                     trajectory[k].append(agent)
-
+        csv_list.append(agent_path)
     ref_paths = dict()
     beta_dict = {'7-8': math.pi / 4, '12-8': -math.pi / 6, '2-10': math.pi / 4, '2-11': math.pi / 4,
                  '6-1': -math.pi / 6, '3-4': -math.pi / 6, '9-4': math.pi / 4, '9-5': math.pi / 4,
                  '9-10': -math.pi / 6, '13-5': -math.pi / 6, '14-4': -math.pi / 6, '6-11': -math.pi / 6,
                  '7-10': 0, '2-8': 0, '3-8': 0, '9-1': 0, '12-5': -math.pi / 6, '13-8': -math.pi / 6,
-                 '14-1': -math.pi / 6, '14-15': -math.pi / 6, '13-4': math.pi / 4, '14-5': math.pi / 4,
+                 '14-1': math.pi / 4, '14-15': -math.pi / 6, '13-4': math.pi / 4, '14-5': math.pi / 4,
                  '12-10': math.pi / 12, '7-11': -math.pi / 6, '9-11': -math.pi / 6, '13-10': math.pi / 12,
                  '2-4': -math.pi / 6, '3-5': -math.pi / 6, '6-10': -math.pi / 6, '6-4': 0}
     poly_dict = {'7-8': 6, '12-8': 6, '2-10': 6, '2-11': 6, '6-1': 6, '3-4': 6, '9-4': 6, '9-5': 6,
                  '9-10': 4, '13-5': 1, '14-4': 1, '6-11': 3, '7-10': 1, '2-8': 2, '3-8': 2, '9-1': 4,
-                 '12-5': 1, '13-8': 6, '14-1': 6, '14-15': 1, '13-4': 1, '14-5': 6, '12-10': 4, '7-11': 4,
+                 '12-5': 1, '13-8': 6, '14-1': 5, '14-15': 1, '13-4': 1, '14-5': 6, '12-10': 4, '7-11': 4,
                  '9-11': 4, '13-10': 6, '2-4': 4, '3-5': 4, '6-10': 4, '6-4': 4}
     # for trajectories in one ref path
+    rare_paths = []
     for ref_i, (k, v) in enumerate(sorted(trajectory.items())):
         xy = []
         path_w = []
         # save all (x,y) points in xy
         for track in v:
             path_w.append(track.width)
-            for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last, 1000):
+            for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last, 100):
                 motion_state = track.motion_states[ts]
                 if k == '12-8' and motion_state.x < 1015:
                     pass
@@ -185,6 +173,8 @@ def get_ref_paths(base_path, dir_name, csv_num):
                     xy.append([motion_state.x, motion_state.y])
         # for rare paths, use raw points and interpolation points
         if len(v) < 2:
+            print('rare path:', k)
+            rare_paths.append(k)
             x_points = []
             y_points = []
             for i, point in enumerate(xy[:-1]):
@@ -192,12 +182,12 @@ def get_ref_paths(base_path, dir_name, csv_num):
                 x_points.append((point[0]+xy[i+1][0])/2)
                 y_points.append(point[1])
                 y_points.append((point[1]+xy[i+1][1])/2)
-            ref_paths[k] = [x_points, y_points, [point[0] for point in xy],
-                            [point[1] for point in xy], v[0].width]
+            ref_paths[k] = [np.array(x_points), np.array(y_points), np.array([point[0] for point in xy]),
+                            np.array([point[1] for point in xy]), v[0].width]
         else:
             ref_path, poly_func = fit_ref_path(xy, k, path_w, beta_dict, poly_dict)
             ref_paths[k] = ref_path
-    return ref_paths
+    return ref_paths, csv_list, rare_paths
 
 
 def cal_dis(x, y):
@@ -218,7 +208,7 @@ def find_crossing_point(dis, x, y):
     # the shortest distance is from xid-th point in x to yid-th point in y
     crossing_point = (x[xid]+y[yid])/2
     # print('({:.3f},{:.3f})'.format(crossing_point[0], crossing_point[1]))
-    return crossing_point
+    return crossing_point, xid, yid
 
 
 def find_merging_point(x, y, dis, th=0.8):
@@ -232,20 +222,95 @@ def find_merging_point(x, y, dis, th=0.8):
     for i in range(2, len(min_dis)-2):
         if min_dis[i-1] > th > min_dis[i+1] and min_dis[i-2] > th > min_dis[i+2]:
             merging_point = (x[i]+y[y_id[i]])/2
-            return merging_point
+            return merging_point, i, y_id[i]
         return None
 
 
-def plot_intersection(seq1, seq2, path1, path2, intersection):
-    fig, axes = plt.subplots(1, 1, figsize=(4, 4))
+def rotate_aug(x, y, intersection, theta):
+    # rotate the x,y point counterclockwise at angle theta around intersection point
+    x_rot = (x - intersection[0]) * math.cos(theta) - (y - intersection[1]) * math.sin(theta) + intersection[0]
+    y_rot = (x - intersection[0]) * math.sin(theta) + (y - intersection[1]) * math.cos(theta) + intersection[1]
+    return x_rot, y_rot
+
+
+def plot_intersection(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2):
+    '''
+    :param x1: x list
+    :param y1: y list
+    :param w1: line width
+    :param x2:
+    :param y2:
+    :param w2:
+    :param fig_name: figure name to save
+    :param intersection: (x,y) of intersection
+    :param id1: id of the intersection point in x1
+    :param id2:
+    :return: save the figure
+    '''
+    d = 4  # fig size
+    r = 60  # range of x and y
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=100)
+    # set bg to black
     axes.patch.set_facecolor("k")
-    plt.plot(seq1[0], seq1[1], linewidth=seq1[4]*2, color='b')
-    plt.plot(seq2[0], seq2[1], linewidth=seq2[4]*2, color='g')
-    circle = patches.Circle(intersection, 0.5, color='r', zorder=3)
+
+    # calculate the k as the tangent
+    if id1+1 >= len(x1):
+        delta_y1, delta_x1 = y1[id1] - y1[id1 - 1], x1[id1] - x1[id1 - 1]
+    elif id1-1 < 0:
+        delta_y1, delta_x1 = y1[id1 + 1] - y1[id1], x1[id1 + 1] - x1[id1]
+    else:
+        delta_y1, delta_x1 = y1[id1 + 1] - y1[id1 - 1], x1[id1 + 1] - x1[id1 - 1]
+    k1 = delta_y1 / delta_x1
+    theta1 = math.atan(k1)
+    # convert from -pi/2~pi/2 to 0~pi
+    if theta1 < 0:
+        theta1 += math.pi
+    # convert to pi~2pi if needed
+    if delta_x1 < 0 < k1 or k1 < 0 < delta_x1:
+        theta1 += math.pi
+    if id2+1 >= len(x2):
+        delta_y2, delta_x2 = (y2[id2] - y2[id2 - 1]), (x2[id2] - x2[id2 - 1])
+    elif id2-1 < 0:
+        delta_y2, delta_x2 = (y2[id2 + 1] - y2[id2]), (x2[id2 + 1] - x2[id2])
+    else:
+        delta_y2, delta_x2 = (y2[id2 + 1] - y2[id2 - 1]), (x2[id2 + 1] - x2[id2 - 1])
+
+    k2 = delta_y2 / delta_x2
+    theta2 = math.atan(k2)
+    # convert from -pi/2~pi/2 to 0~pi
+    if theta2 < 0:
+        theta2 += math.pi
+    # convert to pi~2pi if needed
+    if delta_x2 < 0 < k2 or k2 < 0 < delta_x2:
+        theta2 += math.pi
+    # theta of angle bisector
+    avg_theta = (theta1+theta2)/2
+    theta1_rot = theta1 - avg_theta
+    k1_rot = math.tan(theta1_rot)
+    theta2_rot = theta2 - avg_theta
+    k2_rot = math.tan(theta2_rot)
+    # rotate according to angle bisector to align
+    x1_rot, y1_rot = rotate_aug(x1, y1, intersection, -avg_theta)
+    x2_rot, y2_rot = rotate_aug(x2, y2, intersection, -avg_theta)
+    plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * d // r, color='b')
+    plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * d // r, color='g')
+    plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='b')
+    plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='g')
+    circle = patches.Circle(intersection, (w1 + w2) * 2 * d / r, color='r', zorder=3)
     axes.add_patch(circle)
+    # draw the arrow whose length is al
+    al = 8
+    axes.arrow(x1[id1], y1[id1], al/(k1_rot**2+1)**0.5, al * k1_rot/(k1_rot**2+1)**0.5, zorder=4,
+               color='purple', width=0.2, head_width=0.6)
+    axes.arrow(x2[id2], y2[id2], al/(k2_rot**2+1)**0.5, al * k2_rot/(k2_rot**2+1)**0.5, zorder=5,
+               color='yellow', width=0.2, head_width=0.6)
+    axes.arrow(x1[id1], y1[id1], al / (k1 ** 2 + 1) ** 0.5, al * k1 / (k1 ** 2 + 1) ** 0.5, zorder=4,
+               color='purple', width=0.2, head_width=0.6)
+    axes.arrow(x2[id2], y2[id2], al / (k2 ** 2 + 1) ** 0.5, al * k2 / (k2 ** 2 + 1) ** 0.5, zorder=5,
+               color='yellow', width=0.2, head_width=0.6)
     # set x y range
-    plt.xlim(intersection[0]-15, intersection[0]+15)
-    plt.ylim(intersection[1]-15, intersection[1]+15)
+    plt.xlim(intersection[0]-r//2, intersection[0]+r//2)
+    plt.ylim(intersection[1]-r//2, intersection[1]+r//2)
 
     # remove the white biankuang
     plt.gca().xaxis.set_major_locator(plt.NullLocator())
@@ -253,7 +318,7 @@ def plot_intersection(seq1, seq2, path1, path2, intersection):
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
 
-    plt.savefig('D:/Dev/UCB task/intersection_figs/{} {}.png'.format(path1, path2))
+    plt.savefig('D:/Dev/UCB task/intersection_figs/{}.png'.format(fig_name))
     plt.close()
 
 
@@ -267,34 +332,140 @@ def find_intersection(seq1, seq2):
 
     if min_dis > 4:
         # no intersection point
-        return [-1, -1]
+        return None
     intersection = find_merging_point(x, y, dis)
     # no merging point, find crossing point
     if intersection is None:
-        intersection = find_crossing_point(dis, x, y)
-    return intersection
+        intersection, xid, yid = find_crossing_point(dis, x, y)
+    else:
+        intersection, xid, yid = intersection
+    return intersection, xid, yid
+
+
+def plot_global_image(ref_paths, path_name, path_info, fig_name):
+    '''
+    :param ref_paths:
+    :param path_names: target path name in str
+    :param path_info: a dict [path name]:intersection
+    :param fig_name: figure name
+    :return:
+    '''
+    d = 8  # fig size
+    r = 100  # range of x and y
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=200)
+    # set bg to black
+    axes.patch.set_facecolor("k")
+    x1, y1, w1 = ref_paths[path_name][0], ref_paths[path_name][1], ref_paths[path_name][4]
+    plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='r')
+    for srd_path_name, intersection in path_info.items():
+        x2, y2, w2 = ref_paths[srd_path_name][0], ref_paths[srd_path_name][1], ref_paths[srd_path_name][4]
+        plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='b')
+        circle = patches.Circle(intersection, (w1 + w2) * 2 * d / r, color='g', zorder=3)
+        axes.add_patch(circle)
+    # set x y range
+    xs, ys = 980, 950
+    plt.xlim(xs, xs + r)
+    plt.ylim(ys, ys + r)
+
+    # remove the white biankuang
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+    plt.margins(0, 0)
+
+    plt.savefig('D:/Dev/UCB task/global_images/{}.png'.format(fig_name))
+    plt.close()
+
+
+def plot_rotate_crop(ref_paths, path_name, path_info, fig_name, theta, start_point):
+    d = 4  # fig size
+    r = 40  # range of x and y
+    dpi = 50
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
+    # set bg to black
+    axes.patch.set_facecolor("k")
+    x1, y1, w1 = ref_paths[path_name][0], ref_paths[path_name][1], ref_paths[path_name][4]
+    x1_rot, y1_rot = rotate_aug(x1, y1, start_point, theta)
+    plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * d // r, color='r')
+    for srd_path_name, intersection in path_info.items():
+        x2, y2, w2 = ref_paths[srd_path_name][0], ref_paths[srd_path_name][1], ref_paths[srd_path_name][4]
+        x2_rot, y2_rot = rotate_aug(x2, y2, start_point, theta)
+        plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * d // r, color='b')
+        intersection_x_rot, intersection_y_rot = rotate_aug(intersection[0], intersection[1], start_point, theta)
+        circle = patches.Circle((intersection_x_rot, intersection_y_rot), (w1 + w2) * 2 * d / r, color='g', zorder=3)
+        axes.add_patch(circle)
+    # set x y range
+    plt.xlim(start_point[0] - r//2, start_point[0] + r//2)
+    plt.ylim(start_point[1], start_point[1] + r)
+
+    # remove the white biankuang
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+    plt.margins(0, 0)
+
+    plt.savefig('D:/Dev/UCB task/target_surrounding_images/{}.png'.format(fig_name))
+    plt.close()
 
 
 def main(base_path, dir_name):
-    ref_paths = get_ref_paths(base_path, dir_name, 21)
+    ref_paths, csv_list, rare_paths = get_ref_paths(base_path, dir_name)
     path_names = sorted(ref_paths.keys())
-    rare_paths = ['14-8', '9-8', '2-1', '6-4', '12-10', '13-10']
+    intersection_info = dict()
+    for path_name in path_names:
+        intersection_info[path_name] = dict()
     for i in range(len(path_names)):
+        path1 = path_names[i]
+        if path1 in rare_paths:
+            continue
         for j in range(i + 1, len(path_names)):
-            path1 = path_names[i]
             path2 = path_names[j]
-            if path1 in rare_paths or path2 in rare_paths:
+            if path2 in rare_paths:
                 continue
             seq1 = ref_paths[path1]
             seq2 = ref_paths[path2]
             if path1.split('-')[0] == path2.split('-')[0]:
                 continue
             intersection = find_intersection(seq1, seq2)
-            if intersection[0] == -1:
+            if intersection is None:
                 continue
             else:
-                plot_intersection(seq1, seq2, path1, path2, intersection)
+                # intersection of path1 and path2 exists
+                intersection, first_id, second_id = intersection
+                intersection_info[path1][path2] = intersection
+                intersection_info[path2][path1] = intersection
+                '''
+                plot_intersection(seq1[0], seq1[1], seq1[4], seq2[0], seq2[1], seq2[4], path1+' '+path2,
+                                  intersection, first_id, second_id)
+                degree = 2
+                # rotate x1,y1 +- degree around intersection and plot
+                theta = math.pi*degree/180
+                x1_rot, y1_rot = rotate_aug(seq1[0], seq1[1], intersection, theta)
+                plot_intersection(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4], path1+' '+path2+'_'+str(degree),
+                                  intersection, first_id, second_id)
 
+                x1_rot, y1_rot = rotate_aug(seq1[0], seq1[1], intersection, -theta)
+                plot_intersection(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4],
+                                  path1 + ' ' + path2 + '_-' + str(degree),
+                                  intersection, first_id, second_id)
+                break
+                '''
+
+    for i, tracks in enumerate(csv_list):
+        for agent, path_name in tracks:
+            if path_name in rare_paths:
+                continue
+            # plot global image
+            # plot_global_image(ref_paths, path_name, intersection_info[path_name], path_name+'_global')
+            # from start to end, crop
+            ms = agent.motion_states[agent.time_stamp_ms_first + 10 * 100]
+            theta = math.pi/2 - ms.psi_rad
+            plot_rotate_crop(ref_paths, path_name, intersection_info[path_name], str(i) + '_' + path_name+'_50',
+                             theta, [ms.x, ms.y])
+            # for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last, 100):
+            #     # judge if meeting requirements of starting
+            #     ms = agent.motion_states[ts]
+        break
     return
 
 
