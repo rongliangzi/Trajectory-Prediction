@@ -1,5 +1,6 @@
 from utils import dataset_reader
 from utils import dict_utils
+from utils import map_vis_without_lanelet
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -9,8 +10,50 @@ import glob
 import os
 import pickle
 
+starting_area_dict = dict()
+starting_area_dict[2] = dict()
+starting_area_dict[2]['x'] = [992, 992.2, 1002.3, 1002]
+starting_area_dict[2]['y'] = [1005.5, 1002.5, 1002, 1005.5]
+starting_area_dict[2]['stoplinex'] = [1000.1, 1000.2]
+starting_area_dict[2]['stopliney'] = [1005.5, 1002.5]
+starting_area_dict[3] = dict()
+starting_area_dict[3]['x'] = [992, 992.2, 1002.3, 1002]
+starting_area_dict[3]['y'] = [1002.5, 997.5, 993, 1002]
+starting_area_dict[3]['stoplinex'] = [1000.15, 1000.3]
+starting_area_dict[3]['stopliney'] = [1001.5, 997]
+starting_area_dict[6] = dict()
+starting_area_dict[6]['x'] = [1024, 1025.5, 1028.9, 1027.6]
+starting_area_dict[6]['y'] = [996.5, 986, 986.5, 997]
+starting_area_dict[6]['stoplinex'] = [1024, 1028]
+starting_area_dict[6]['stopliney'] = [994.6, 994.8]
+starting_area_dict[7] = dict()
+starting_area_dict[7]['x'] = [1027.9, 1029.2, 1036.8, 1038.3]
+starting_area_dict[7]['y'] = [997.5, 986.5, 987, 998]
+starting_area_dict[7]['stoplinex'] = [1028.8, 1036]
+starting_area_dict[7]['stopliney'] = [994.8, 995]
+starting_area_dict[9] = dict()
+starting_area_dict[9]['x'] = [1031.5, 1032.5, 1042.5, 1042.3]
+starting_area_dict[9]['y'] = [1017, 1005.5, 1006, 1010]
+starting_area_dict[9]['stoplinex'] = [1033.3, 1034.3]
+starting_area_dict[9]['stopliney'] = [1014, 1006]
+starting_area_dict[12] = dict()
+starting_area_dict[12]['x'] = [1015.3, 1015.5, 1020.5, 1019]
+starting_area_dict[12]['y'] = [1020, 1010.5, 1010.4, 1020.2]
+starting_area_dict[12]['stoplinex'] = [1016.5, 1020]
+starting_area_dict[12]['stopliney'] = [1012, 1012]
+starting_area_dict[13] = dict()
+starting_area_dict[13]['x'] = [1011.5, 1011.7, 1016, 1015.5]
+starting_area_dict[13]['y'] = [1020, 1010.5, 1010.4, 1020.2]
+starting_area_dict[13]['stoplinex'] = [1011.7, 1016.3]
+starting_area_dict[13]['stopliney'] = [1012, 1012]
+starting_area_dict[14] = dict()
+starting_area_dict[14]['x'] = [1006, 996.2, 1011.4, 1011.1]
+starting_area_dict[14]['y'] = [1020, 1010, 1009.9, 1020.2]
+starting_area_dict[14]['stoplinex'] = [1004, 1011.3]
+starting_area_dict[14]['stopliney'] = [1012, 1012]
 
-def judge_start(ms, track):
+
+def judge_start_v1(ms, track):
     if ms.x < 1007 and 1002.6 < ms.y < 1006 and ms.vx > 0:
         return 2
     elif ms.x < 1007 and 997 < ms.y < 1002.6 and ms.vx > 0:
@@ -33,6 +76,18 @@ def judge_start(ms, track):
         return 0
     else:
         return 0
+
+
+def judge_start(ms, track):
+    # judge if in some starting area frame by frame
+    for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last, 100):
+        motion_state = track.motion_states[ts]
+        cur_p = (motion_state.x, motion_state.y)
+        for k, v in starting_area_dict.items():
+            in_box = judge_in_box(v['x'], v['y'], cur_p)
+            if in_box == 1:
+                return k
+    return 0
 
 
 def judge_end(ms, track):
@@ -60,7 +115,7 @@ def fit_ref_path(xy, k, path_w, beta_dict, poly_dict):
     y = np.array([p[1] for p in xy])
     beta = beta_dict[k]
     poly = poly_dict[k]
-    # rotate the points
+    # rotate the points clockwise
     x_rot = x * math.cos(beta) + y * math.sin(beta)
     y_rot = y * math.cos(beta) - x * math.sin(beta)
     # fit a polynomial function using rotated points
@@ -104,7 +159,7 @@ def get_ref_paths(base_path, dir_name):
     :return: all ref paths in a dict. each item includes [x, y, raw x, raw y, path w], poly func in str
     '''
     trajectory = dict()
-    csv_list = list()
+    csv_dict = dict()
     f = open('D:/Dev/UCB task/poly.txt', 'r')
     lines = f.readlines()
     ref_index_dict = dict()
@@ -132,19 +187,19 @@ def get_ref_paths(base_path, dir_name):
                     trajectory[k] = [agent]
                 elif k not in ['12-10', '13-10']:
                     trajectory[k].append(agent)
-        csv_list.append(agent_path)
+        csv_dict[csv_name[-7:-4]] = agent_path
     ref_paths = dict()
     beta_dict = {'7-8': math.pi / 4, '12-8': -math.pi / 6, '2-10': math.pi / 4, '2-11': math.pi / 4,
                  '6-1': -math.pi / 6, '3-4': -math.pi / 6, '9-4': math.pi / 4, '9-5': math.pi / 4,
                  '9-10': -math.pi / 6, '13-5': -math.pi / 6, '14-4': -math.pi / 6, '6-11': -math.pi / 6,
-                 '7-10': 0, '2-8': 0, '3-8': 0, '9-1': 0, '12-5': -math.pi / 6, '13-8': -math.pi / 6,
-                 '14-1': math.pi / 4, '14-15': -math.pi / 6, '13-4': math.pi / 4, '14-5': math.pi / 4,
+                 '7-10': 0, '2-8': 0, '3-8': 0, '9-1': 0, '12-5': math.pi / 5, '13-8': -math.pi / 6,
+                 '14-1': math.pi / 4, '14-15': -math.pi / 6, '13-4': math.pi / 5, '14-5': math.pi / 4,
                  '12-10': math.pi / 12, '7-11': -math.pi / 6, '9-11': -math.pi / 6, '13-10': math.pi / 12,
                  '2-4': -math.pi / 6, '3-5': -math.pi / 6, '6-10': -math.pi / 6, '6-4': 0}
     poly_dict = {'7-8': 6, '12-8': 6, '2-10': 6, '2-11': 6, '6-1': 6, '3-4': 6, '9-4': 6, '9-5': 6,
                  '9-10': 4, '13-5': 1, '14-4': 1, '6-11': 3, '7-10': 1, '2-8': 2, '3-8': 2, '9-1': 4,
-                 '12-5': 1, '13-8': 6, '14-1': 5, '14-15': 1, '13-4': 1, '14-5': 6, '12-10': 4, '7-11': 4,
-                 '9-11': 4, '13-10': 6, '2-4': 4, '3-5': 4, '6-10': 4, '6-4': 4}
+                 '12-5': 3, '13-8': 6, '14-1': 5, '14-15': 1, '13-4': 3, '14-5': 6, '12-10': 4, '7-11': 4,
+                 '9-11': 4, '13-10': 6, '2-4': 4, '3-5': 4, '6-10': 4, '6-4': 6}
     # for trajectories in one ref path
     rare_paths = []
     for ref_i, (k, v) in enumerate(sorted(trajectory.items())):
@@ -188,7 +243,7 @@ def get_ref_paths(base_path, dir_name):
         else:
             ref_path, poly_func = fit_ref_path(xy, k, path_w, beta_dict, poly_dict)
             ref_paths[k] = ref_path
-    return ref_paths, csv_list, rare_paths
+    return ref_paths, csv_dict, rare_paths
 
 
 def cal_dis(x, y):
@@ -295,8 +350,8 @@ def plot_intersection(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2):
     x2_rot, y2_rot = rotate_aug(x2, y2, intersection, -avg_theta)
     plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * d // r, color='b')
     plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * d // r, color='g')
-    plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='b')
-    plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='g')
+    # plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='b')
+    # plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='g')
     circle = patches.Circle(intersection, (w1 + w2) * 2 * d / r, color='r', zorder=3)
     axes.add_patch(circle)
     # draw the arrow whose length is al
@@ -305,10 +360,10 @@ def plot_intersection(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2):
                color='purple', width=0.2, head_width=0.6)
     axes.arrow(x2[id2], y2[id2], al/(k2_rot**2+1)**0.5, al * k2_rot/(k2_rot**2+1)**0.5, zorder=5,
                color='yellow', width=0.2, head_width=0.6)
-    axes.arrow(x1[id1], y1[id1], al / (k1 ** 2 + 1) ** 0.5, al * k1 / (k1 ** 2 + 1) ** 0.5, zorder=4,
-               color='purple', width=0.2, head_width=0.6)
-    axes.arrow(x2[id2], y2[id2], al / (k2 ** 2 + 1) ** 0.5, al * k2 / (k2 ** 2 + 1) ** 0.5, zorder=5,
-               color='yellow', width=0.2, head_width=0.6)
+    # axes.arrow(x1[id1], y1[id1], al / (k1 ** 2 + 1) ** 0.5, al * k1 / (k1 ** 2 + 1) ** 0.5, zorder=4,
+    #            color='purple', width=0.2, head_width=0.6)
+    # axes.arrow(x2[id2], y2[id2], al / (k2 ** 2 + 1) ** 0.5, al * k2 / (k2 ** 2 + 1) ** 0.5, zorder=5,
+    #            color='yellow', width=0.2, head_width=0.6)
     # set x y range
     plt.xlim(intersection[0]-r//2, intersection[0]+r//2)
     plt.ylim(intersection[1]-r//2, intersection[1]+r//2)
@@ -343,26 +398,28 @@ def find_intersection(seq1, seq2):
     return intersection, xid, yid
 
 
-def plot_global_image(ref_paths, path_name, path_info, fig_name):
+def plot_global_image(ref_paths, fig_name, work_dir, bg=False):
     '''
     :param ref_paths:
-    :param path_names: target path name in str
-    :param path_info: a dict [path name]:intersection
     :param fig_name: figure name
+    :param work_dir: the dir to save
+    :param bg: if plot background
     :return:
     '''
     d = 8  # fig size
     r = 100  # range of x and y
     fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=200)
-    # set bg to black
-    axes.patch.set_facecolor("k")
-    x1, y1, w1 = ref_paths[path_name][0], ref_paths[path_name][1], ref_paths[path_name][4]
-    plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='r')
-    for srd_path_name, intersection in path_info.items():
-        x2, y2, w2 = ref_paths[srd_path_name][0], ref_paths[srd_path_name][1], ref_paths[srd_path_name][4]
-        plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='b')
-        circle = patches.Circle(intersection, (w1 + w2) * 2 * d / r, color='g', zorder=3)
-        axes.add_patch(circle)
+    if bg:
+        # load and draw the lanelet2 map, either with or without the lanelet2 library
+        lanelet_map_file = "D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm"
+        map_vis_without_lanelet.draw_map_without_lanelet(lanelet_map_file, axes, 0, 0)
+        fig_name += '_bg'
+    else:
+        # set bg to black
+        axes.patch.set_facecolor("k")
+    for path_name in ref_paths.keys():
+        x0, y0, _, _, w0 = ref_paths[path_name]
+        plt.plot(x0, y0, linewidth=w0 * 36 * d // r, color='b')
     # set x y range
     xs, ys = 980, 950
     plt.xlim(xs, xs + r)
@@ -373,12 +430,33 @@ def plot_global_image(ref_paths, path_name, path_info, fig_name):
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-
-    plt.savefig('D:/Dev/UCB task/global_images/{}.png'.format(fig_name))
+    save_dir = work_dir+'global_images/'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    plt.savefig(save_dir+'{}.png'.format(fig_name))
     plt.close()
+    for path_name in ref_paths.keys():
+        d = 8  # fig size
+        r = 100  # range of x and y
+        fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=200)
+        lanelet_map_file = "D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm"
+        map_vis_without_lanelet.draw_map_without_lanelet(lanelet_map_file, axes, 0, 0)
+        x0, y0, x1, y1, w0 = ref_paths[path_name]
+        plt.plot(x0, y0, linewidth=w0 * 36 * d // r, color='b', alpha=0.5)
+        plt.scatter(x1, y1, s=1)
+        xs, ys = 980, 950
+        plt.xlim(xs, xs + r)
+        plt.ylim(ys, ys + r)
+        # remove the white biankuang
+        plt.gca().xaxis.set_major_locator(plt.NullLocator())
+        plt.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        plt.savefig(save_dir+'{}_{}.png'.format(fig_name, path_name))
+        plt.close()
 
 
-def plot_rotate_crop(ref_paths, path_name, path_info, fig_name, theta, start_point):
+def plot_rotate_crop(ref_paths, path_name, path_info, fig_name, theta, start_point, save_dir):
     d = 4  # fig size
     r = 40  # range of x and y
     dpi = 50
@@ -387,13 +465,13 @@ def plot_rotate_crop(ref_paths, path_name, path_info, fig_name, theta, start_poi
     axes.patch.set_facecolor("k")
     x1, y1, w1 = ref_paths[path_name][0], ref_paths[path_name][1], ref_paths[path_name][4]
     x1_rot, y1_rot = rotate_aug(x1, y1, start_point, theta)
-    plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * d // r, color='r')
+    plt.plot(x1_rot, y1_rot, linewidth=w1 * 36 * d // r, color='r', zorder=25)
     for srd_path_name, intersection in path_info.items():
         x2, y2, w2 = ref_paths[srd_path_name][0], ref_paths[srd_path_name][1], ref_paths[srd_path_name][4]
         x2_rot, y2_rot = rotate_aug(x2, y2, start_point, theta)
-        plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * d // r, color='b')
+        plt.plot(x2_rot, y2_rot, linewidth=w2 * 36 * d // r, color='b')
         intersection_x_rot, intersection_y_rot = rotate_aug(intersection[0], intersection[1], start_point, theta)
-        circle = patches.Circle((intersection_x_rot, intersection_y_rot), (w1 + w2) * 2 * d / r, color='g', zorder=3)
+        circle = patches.Circle((intersection_x_rot, intersection_y_rot), (w1 + w2) * 2 * d / r, color='g', zorder=30)
         axes.add_patch(circle)
     # set x y range
     plt.xlim(start_point[0] - r//2, start_point[0] + r//2)
@@ -404,13 +482,50 @@ def plot_rotate_crop(ref_paths, path_name, path_info, fig_name, theta, start_poi
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-
-    plt.savefig('D:/Dev/UCB task/target_surrounding_images/{}.png'.format(fig_name))
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    plt.savefig(save_dir+'{}.png'.format(fig_name))
     plt.close()
 
 
-def main(base_path, dir_name):
-    ref_paths, csv_list, rare_paths = get_ref_paths(base_path, dir_name)
+def judge_point_side(p1, p2, p3, p4):
+    # judge if p3 p4 are in the same side of p1 p2
+    if p1[0] == p2[0]:
+        if p3[0] > p1[0] > p4[0] or p4[0] > p1[0] > p3[0]:
+            return 0
+        else:
+            return 1
+    else:
+        k = (p2[1]-p1[1])/(p2[0]-p1[0])
+        b = (p2[0]*p1[1]-p1[0]*p2[1])/(p2[0]-p1[0])
+        y3 = p3[0] * k + b
+        y4 = p4[0] * k + b
+        if (y3 < p3[1] and y4 < p4[1]) or (y3 > p3[1] and y4 > p4[1]):
+            return 1
+        else:
+            return 0
+
+
+def judge_in_box(x, y, p):
+    # judge if p in the polygon formed by x y
+    assert len(x) == len(y)
+    xl = len(x)
+    for i in range(xl-2):
+        same_side = judge_point_side((x[i], y[i]), (x[i+1], y[i+1]), (x[i+2], y[i+2]), p)
+        if same_side == 0:
+            return 0
+    same_side = judge_point_side((x[xl-2], y[xl-2]), (x[xl-1], y[xl-1]), (x[0], y[0]), p)
+    if same_side == 0:
+        return 0
+    same_side = judge_point_side((x[xl-1], y[xl-1]), (x[0], y[0]), (x[1], y[1]), p)
+    if same_side == 0:
+        return 0
+    return 1
+
+
+def main(base_path, dir_name, work_dir):
+    ref_paths, csv_dict, rare_paths = get_ref_paths(base_path, dir_name)
+    rare_paths += ['6-4']
     path_names = sorted(ref_paths.keys())
     intersection_info = dict()
     for path_name in path_names:
@@ -452,42 +567,119 @@ def main(base_path, dir_name):
                 break
                 '''
 
-    coordinate_dict = dict()
-    for i, tracks in enumerate(csv_list):
+    ref_path_id_dict = dict()
+    for i, path_name in enumerate(path_names):
+        ref_path_id_dict[path_name] = i
+    for csv_id, tracks in csv_dict.items():
+        # for each csv, save a dict to pickle
+        coordinate_dict = dict()
+        print(csv_id)
+        # plot global image
+        cur_csv_work_dir = work_dir+'target_surrounding_images/'+csv_id+'/'
+        # plot_global_image(ref_paths, '{}_global'.format(csv_id), work_dir, bg=True)
         for agent, path_name in tracks:
             if path_name in rare_paths:
                 continue
-            # plot global image
-            # plot_global_image(ref_paths, path_name, intersection_info[path_name], path_name+'_global')
-            # from start to end, crop
-            ts = agent.time_stamp_ms_first + 10 * 100
-            ms = agent.motion_states[ts]
-            theta = math.pi/2 - ms.psi_rad
-            plot_rotate_crop(ref_paths, path_name, intersection_info[path_name], str(i) + '_' + path_name+'_50',
-                             theta, [ms.x, ms.y])
-            # calculate the relative coordinates of other cars and judge
-            for car, car_path_name in tracks:
-                if ts not in car.motion_states:
+            # for each agent(target car), save the agent to [ref_path_id][agent]
+            ref_path_id = ref_path_id_dict[path_name]
+            if ref_path_id not in coordinate_dict.keys():
+                coordinate_dict[ref_path_id] = dict()
+            coordinate_dict[ref_path_id][agent.track_id] = dict()
+            start_id = int(path_name.split('-')[0])
+            # select the starting frame from start to end, if in starting area, crop and save ref path image
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last, 100):
+                coordinate_dict[ref_path_id][agent.track_id][ts] = dict()
+                ms = agent.motion_states[ts]
+                # judge if in starting area
+                polygon_points = starting_area_dict[start_id]
+                in_starting_area = judge_in_box(polygon_points['x'], polygon_points['y'], (ms.x, ms.y))
+                if in_starting_area == 0:
                     continue
-                # get the motion state of other car and judge if they are in the bounding box
-                car_ms = car.motion_states[ts]
-                car_x_rot, car_y_rot = rotate_aug(car_ms.x, car_ms.y, [ms.x, ms.y], theta)
-                new_coor = (car_x_rot - ms.x, car_y_rot - ms.y)
-                if -20 < new_coor[0] < 20 and 0 < new_coor[1] < 40:
-                    if ts not in coordinate_dict:
-                        coordinate_dict[ts] = dict()
-                    else:
-                        coordinate_dict[ts][car.track_id] = new_coor
-            # for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last, 100):
-            #     # judge if meeting requirements of starting
-            #     ms = agent.motion_states[ts]
-        break
-    pickle_file = open('D:/Dev/UCB task/pickle/new_coordinate.pkl', 'wb')
-    pickle.dump(coordinate_dict, pickle_file)
-    pickle_file.close()
+                theta = math.pi/2 - ms.psi_rad
+                # rotate the ref path around current point, crop (-20,20), (0,40), and save
+                # plot_rotate_crop(ref_paths, path_name, intersection_info[path_name],
+                #                  '{}_{}_{}_{}'.format(csv_id, str(agent.track_id), path_name, str(ts)),
+                #                  theta, [ms.x, ms.y], cur_csv_work_dir)
+                # calculate the relative coordinates of other cars and judge
+                for car, car_path_name in tracks:
+                    if ts not in car.motion_states.keys():
+                        continue
+                    # get the motion state of other car and judge if they are in the bounding box
+                    car_ms = car.motion_states[ts]
+                    car_x_rot, car_y_rot = rotate_aug(car_ms.x, car_ms.y, [ms.x, ms.y], theta)
+                    new_coor = (car_x_rot - ms.x, car_y_rot - ms.y)
+                    if -20 < new_coor[0] < 20 and 0 < new_coor[1] < 40:
+                        coordinate_dict[ref_path_id][agent.track_id][ts][car.track_id] = new_coor
+        pickle_save_dir = work_dir+'pickle/'
+        pickle_file = open(pickle_save_dir+'{}_relative_coordinate.pkl'.format(csv_id), 'wb')
+        pickle.dump(coordinate_dict, pickle_file)
+        pickle_file.close()
+    return
+
+
+def find_starting_area(work_dir):
+    d = 8  # fig size
+    r = 100  # range of x and y
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=200)
+    lanelet_map_file = "D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm"
+    map_vis_without_lanelet.draw_map_without_lanelet(lanelet_map_file, axes, 0, 0)
+    x = [1006, 996.2, 1011.4, 1011.1]
+    y = [1019, 1010, 1009.9, 1019.2]
+
+    plt.plot(x[0:2], y[0:2], c='r', zorder=40)
+    plt.plot(x[1:3], y[1:3], c='r', zorder=40)
+    plt.plot(x[2:4], y[2:4], c='r', zorder=40)
+    plt.plot(x[3:]+x[0:1], y[3:]+y[0:1], c='r', zorder=40)
+    xs, ys = 980, 950
+    plt.xlim(xs, xs + r)
+    plt.ylim(ys, ys + r)
+    # remove the white biankuang
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+    plt.margins(0, 0)
+    save_dir = work_dir + 'global_images/'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    plt.savefig(save_dir+'starting_area.png')
+    plt.close()
+
+
+def plot_starting_area():
+    d = 8  # fig size
+    r = 100  # range of x and y
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=200)
+    lanelet_map_file = "D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm"
+    map_vis_without_lanelet.draw_map_without_lanelet(lanelet_map_file, axes, 0, 0)
+    for key, v in starting_area_dict.items():
+        if 'stoplinex' in v:
+            plt.plot(v['stoplinex'], v['stopliney'], zorder=40, c='g')
+            k = (v['stopliney'][1]-v['stopliney'][0])/(v['stoplinex'][1]-v['stoplinex'][0])
+            b = (v['stoplinex'][1]*v['stopliney'][0]-v['stoplinex'][0]*v['stopliney'][1])/(v['stoplinex'][1]-v['stoplinex'][0])
+        x = v['x']
+        y = v['y']
+        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
+        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
+        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
+        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    xs, ys = 980, 950
+    plt.xlim(xs, xs + r)
+    plt.ylim(ys, ys + r)
+    # remove the white biankuang
+    plt.gca().xaxis.set_major_locator(plt.NullLocator())
+    plt.gca().yaxis.set_major_locator(plt.NullLocator())
+    plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+    plt.margins(0, 0)
+    save_dir = work_dir + 'global_images/'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    plt.savefig(save_dir+'all_starting_area.png')
+    plt.close()
 
 
 if __name__ == '__main__':
     base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
     dir_name = 'DR_USA_Intersection_MA/'
-    main(base_path, dir_name)
+    work_dir = 'D:/Dev/UCB task/'
+    main(base_path, dir_name, work_dir)
+    # plot_starting_area()
