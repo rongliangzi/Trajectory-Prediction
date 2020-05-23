@@ -12,8 +12,7 @@ def main(work_dir):
     ref_path_info = pickle.load(pickle_file)
     pickle_file.close()
     ref_paths, csv_dict, rare_paths = ref_path_info['ref_paths'], ref_path_info['csv_dict'], ref_path_info['rare_paths']
-    # set (971, 950) to (0,0) and expand the coordinate at 5
-    x_s, y_s = 971, 950
+
     rare_paths += ['6-4']
     for csv_id, tracks in csv_dict.items():
         # for each csv, save a dict to pickle
@@ -27,7 +26,7 @@ def main(work_dir):
             coordinate_dict[path_name][agent.track_id] = dict()
             start_id = int(path_name.split('-')[0])
             # if in starting area and have at least 69 frames behind, save ref path image and trajectory data
-            for start_ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last - 69*100, 100):
+            for start_ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last - 68*100, 100):
                 ms = agent.motion_states[start_ts]
                 # judge if in starting area in starting frame
                 polygon_points = starting_area_dict[start_id]

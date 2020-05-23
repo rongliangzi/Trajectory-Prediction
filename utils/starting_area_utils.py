@@ -31,12 +31,12 @@ starting_area_dict[9]['stoplinex'] = [1033.3, 1034.3]
 starting_area_dict[9]['stopliney'] = [1014, 1006]
 starting_area_dict[12] = dict()
 starting_area_dict[12]['x'] = [1015.3, 1015.5, 1020.5, 1019]
-starting_area_dict[12]['y'] = [1020, 1010.5, 1010.4, 1020.2]
+starting_area_dict[12]['y'] = [1018, 1010.5, 1010.4, 1018.2]
 starting_area_dict[12]['stoplinex'] = [1016.5, 1020]
 starting_area_dict[12]['stopliney'] = [1012, 1012]
 starting_area_dict[13] = dict()
 starting_area_dict[13]['x'] = [1011.5, 1011.7, 1016, 1015.5]
-starting_area_dict[13]['y'] = [1020, 1010.5, 1010.4, 1020.2]
+starting_area_dict[13]['y'] = [1018, 1010.5, 1010.4, 1018.2]
 starting_area_dict[13]['stoplinex'] = [1011.7, 1016.3]
 starting_area_dict[13]['stopliney'] = [1012, 1012]
 starting_area_dict[14] = dict()
@@ -44,6 +44,18 @@ starting_area_dict[14]['x'] = [1006, 996.2, 1011.4, 1011.1]
 starting_area_dict[14]['y'] = [1020, 1010, 1009.9, 1020.2]
 starting_area_dict[14]['stoplinex'] = [1004, 1011.3]
 starting_area_dict[14]['stopliney'] = [1012, 1012]
+
+x_s, y_s = 971, 950
+rate = 5
+new_coor_starting_area_dict = dict()
+for starting_area in starting_area_dict.keys():
+    new_coor_starting_area_dict[starting_area] = dict()
+    new_coor_starting_area_dict[starting_area]['x'] = [(x - x_s) * rate for x in starting_area_dict[starting_area]['x']]
+    new_coor_starting_area_dict[starting_area]['y'] = [(y - y_s) * rate for y in starting_area_dict[starting_area]['y']]
+    new_coor_starting_area_dict[starting_area]['stoplinex'] = [(x - x_s) * rate for x in
+                                                               starting_area_dict[starting_area]['stoplinex']]
+    new_coor_starting_area_dict[starting_area]['stopliney'] = [(y - y_s) * rate for y in
+                                                               starting_area_dict[starting_area]['stopliney']]
 
 
 def find_starting_area(work_dir):
@@ -92,6 +104,7 @@ def plot_starting_area(work_dir):
         plt.plot(x[2:4], y[2:4], c='r', zorder=40)
         plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
     xs, ys = 980, 950
+    # xs, ys = 45, 0
     plt.xlim(xs, xs + r)
     plt.ylim(ys, ys + r)
     # remove the white biankuang
