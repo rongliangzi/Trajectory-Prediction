@@ -1,6 +1,7 @@
 from utils.starting_area_utils import *
 from utils import new_coor_ref_path_utils
 from utils.coordinate_transform import *
+from align_ref_img import counterclockwise_rotate
 import pickle
 import numpy as np
 
@@ -83,10 +84,90 @@ def gen_frenet(work_dir):
     pickle_file.close()
 
 
+def gen_all_location_info(work_dir):
+    ref_path_info_path = work_dir + 'pickle/ref_path_info_new.pkl'
+    pickle_file = open(ref_path_info_path, 'rb')
+    ref_path_info = pickle.load(pickle_file)
+    pickle_file.close()
+    ref_paths, csv_dict, rare_paths = ref_path_info['ref_paths'], ref_path_info['csv_dict'], ref_path_info['rare_paths']
+    rare_paths += ['6-4']
+
+    pickle_file = open(work_dir + 'pickle/ref_path_intersection.pkl', 'rb')
+    intersection_info = pickle.load(pickle_file)
+    pickle_file.close()
+
+    pickle_file = open(work_dir + 'pickle/all_frenet_coordinate.pkl', 'rb')
+    all_frenet = pickle.load(pickle_file)
+    pickle_file.close()
+
+    ref_frenet = dict()
+    for path_name, path_points in ref_paths.items():
+        start_path = int(path_name.split('-')[0])
+        frenet_s_points, min_dis_id = ref_point2frenet(path_points[0], path_points[1],
+                                                       new_coor_starting_area_dict[start_path]['stoplinex'],
+                                                       new_coor_starting_area_dict[start_path]['stopliney'])
+        ref_frenet[path_name] = dict()
+        ref_frenet[path_name]['s'] = frenet_s_points
+        ref_frenet[path_name]['min_dis_id'] = min_dis_id
+
+    loc = dict()
+    for csv_id, tracks in csv_dict.items():
+        # for each csv, save a dict to pickle
+        loc[csv_id] = dict()
+        print(csv_id)
+        for target, t_path in tracks:
+            if t_path in rare_paths:
+                continue
+            t_id = target.track_id
+            loc[csv_id][t_id] = dict()
+            for ts in range(target.time_stamp_ms_first, target.time_stamp_ms_last + 100, 100):
+                # save trajectory data
+                loc[csv_id][t_id][ts] = dict()
+                t_ms = target.motion_states[ts]
+                theta = math.pi / 2 - t_ms.psi_rad
+                target_s, target_d = all_frenet[csv_id][t_id][ts]
+                # calculate the relative x,y and frenet coordinates of other cars
+                for car, car_path in tracks:
+                    # not for self
+                    if car.track_id == t_id:
+                        continue
+                    # no intersection and not the same path, pass
+                    if car_path not in intersection_info[t_path].keys() and car_path != t_path:
+                        continue
+                    # timestamp not included, pass
+                    if ts not in car.motion_states.keys():
+                        continue
+                    car_s, car_d = all_frenet[csv_id][car.track_id][ts]
+                    car_ms = car.motion_states[ts]
+                    # counterclockwise rotate theta
+                    car_x_rot, car_y_rot = counterclockwise_rotate(car_ms.x, car_ms.y, [t_ms.x, t_ms.y], theta)
+                    new_coor = (car_x_rot - t_ms.x, car_y_rot - t_ms.y)
+                    if car_path == t_path:
+                        loc_info = (new_coor[0], new_coor[1], target_s, car_s, 1)
+                    else:
+                        intersection, first_id, second_id = intersection_info[t_path][car_path]
+                        target_x_s = ref_frenet[t_path]['s'][first_id]
+                        car_x_s = ref_frenet[car_path]['s'][second_id]
+                        target_x_dis = target_x_s - target_s
+                        car_x_dis = car_x_s - car_s
+                        loc_info = (new_coor[0], new_coor[1], target_x_dis, car_x_dis, 0)
+                    loc[csv_id][t_id][ts][car.track_id] = loc_info
+                # finish one start timestamp
+            # finish one target
+        print('finish one csv!')
+        pickle_save_dir = work_dir + 'pickle/'
+        pickle_file = open(pickle_save_dir + 'all_location_info.pkl', 'wb')
+        pickle.dump(loc, pickle_file)
+        pickle_file.close()
+
+    return
+
+
 if __name__ == '__main__':
     data_base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
     data_dir_name = 'DR_USA_Intersection_MA/'
     save_base_dir = 'D:/Dev/UCB task/'
     # save_ref_path_pickle()
     # plot_starting_area(save_base_dir)
-    gen_frenet(save_base_dir)
+    # gen_frenet(save_base_dir)
+    gen_all_location_info(save_base_dir)

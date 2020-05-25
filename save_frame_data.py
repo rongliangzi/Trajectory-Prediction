@@ -23,6 +23,10 @@ def main(work_dir):
     all_frenet = pickle.load(pickle_file)
     pickle_file.close()
 
+    pickle_file = open(work_dir + 'pickle/all_location_info.pkl', 'rb')
+    all_loc = pickle.load(pickle_file)
+    pickle_file.close()
+
     ref_frenet = dict()
     start_time = time.time()
     for path_name, path_points in ref_paths.items():
@@ -35,6 +39,7 @@ def main(work_dir):
         ref_frenet[path_name]['min_dis_id'] = min_dis_id
     print('time:', time.time()-start_time)
     loc = dict()
+
     for csv_id, tracks in csv_dict.items():
         # for each csv, save a dict to pickle
         loc[csv_id] = dict()
@@ -42,51 +47,63 @@ def main(work_dir):
         for target, t_path in tracks:
             if t_path in rare_paths:
                 continue
-            if t_path not in loc.keys():
-                loc[csv_id][t_path] = dict()
             t_id = target.track_id
-            loc[csv_id][t_path][t_id] = dict()
+            loc[csv_id][t_id] = dict()
+            loc[csv_id][t_id]['ref path'] = t_path
             start_id = int(t_path.split('-')[0])
             # if in starting area and have at least 69 frames behind, save ref path image and trajectory data
-            for start_ts in range(target.time_stamp_ms_first, target.time_stamp_ms_last - 68*100, 100):
-                ms = target.motion_states[start_ts]
+            for start_ts in range(target.time_stamp_ms_first, target.time_stamp_ms_last - 68 * 100, 100):
+                start_ms = target.motion_states[start_ts]
                 # judge if in starting area in starting frame
                 polygon_points = new_coor_starting_area_dict[start_id]
-                in_starting_area = judge_in_box(polygon_points['x'], polygon_points['y'], (ms.x, ms.y))
+                in_starting_area = judge_in_box(polygon_points['x'], polygon_points['y'], (start_ms.x, start_ms.y))
                 # if not in starting area, pass
                 if in_starting_area == 0:
                     continue
-                theta = math.pi/2 - ms.psi_rad
                 # save trajectory data
-                loc[csv_id][t_path][t_id][start_ts] = dict()
-                loc[csv_id][t_path][t_id][start_ts]['task'] = set()
-                loc[csv_id][t_path][t_id][start_ts]['task'].add(t_path)
+                loc[csv_id][t_id][start_ts] = dict()
+                loc[csv_id][t_id][start_ts]['task'] = set()
+                loc[csv_id][t_id][start_ts]['task'].add(t_path)
+                loc[csv_id][t_id][start_ts]['agent'] = list()
+                ts_20 = start_ts + 19 * 100
+                t_20_ms = target.motion_states[ts_20]
+                t_20_s = all_frenet[csv_id][t_id][ts_20]
+                # find surrounding cars in the 20th frame, save ref path in 'task' and track id, type in 'agent'
+                for car, car_path in tracks:
+                    if car.track_id == t_id or t_20_ms not in car.motion_states.keys():
+                        continue
+                    car_20_s, car_20_d = all_frenet[csv_id][car.track_id][ts_20]
+                    if car_20_s < -6:
+                        continue
+                    if (car_path == t_path and car_20_s < t_20_s) or car_path not in intersection_info.keys():
+                        continue
+                    # get the motion state of other car and judge if they are in the box
+                    car_ms = car.motion_states[ts_20]
+                    # counterclockwise rotate theta
+                    theta = math.pi / 2 - t_20_ms.psi_rad
+                    car_x_rot, car_y_rot = counterclockwise_rotate(car_ms.x, car_ms.y, [t_20_ms.x, t_20_ms.y], theta)
+                    new_coor = (car_x_rot - t_20_ms.x, car_y_rot - t_20_ms.y)
+                    if -20 < new_coor[0] < 20 and 0 < new_coor[1] < 40:
+                        loc[csv_id][t_id][start_ts]['task'].add(car_path)
+                        loc[csv_id][t_id][start_ts]['agent'].append(car.track_id)
+
                 # in 70 frames
                 for ts in range(start_ts, start_ts + 70 * 100, 100):
-                    loc[csv_id][t_path][t_id][start_ts][ts] = dict()
-                    target_s, target_d = all_frenet[csv_id][t_id][ts]
+                    loc[csv_id][t_id][start_ts][ts] = dict()
                     # calculate the frenet coordinates of other cars and judge if in the box
-                    for car, car_path in tracks:
-                        if car.track_id == t_id or ts not in car.motion_states.keys() or \
-                                car_path not in intersection_info[t_path].keys():
-                            continue
-                        # get the motion state of other car and judge if they are in the box
-                        car_ms = car.motion_states[ts]
-                        # counterclockwise rotate theta
-                        car_x_rot, car_y_rot = counterclockwise_rotate(car_ms.x, car_ms.y, [ms.x, ms.y], theta)
-                        new_coor = (car_x_rot - ms.x, car_y_rot - ms.y)
-                        if -20 < new_coor[0] < 20 and 0 < new_coor[1] < 40:
-                            car_s, car_d = all_frenet[csv_id][car.track_id][ts]
-                            if car_s < -6:
+
+                    id_list = loc[csv_id][t_id][start_ts]['agent']
+                    for car1_id in id_list:
+                        for car2_id in id_list:
+                            if car1_id == car2_id:
                                 continue
-                            intersection, first_id, second_id = intersection_info[t_path][car_path]
-                            target_x_s = ref_frenet[t_path]['s'][first_id]
-                            car_x_s = ref_frenet[car_path]['s'][second_id]
-                            target_x_dis = target_x_s - target_s
-                            car_x_dis = car_x_s - car_s
-                            loc[csv_id][t_path][t_id][start_ts][ts][car.track_id] = (new_coor[0], new_coor[1],
-                                                                                     target_x_dis, car_x_dis)
-                            loc[csv_id][t_path][t_id][start_ts]['task'].add(car_path)
+                            new_x, new_y, s, d, tp = all_loc[csv_id][car1_id][ts][car2_id]
+                            if -20 < new_x < 20 and 0 < new_y < 40:
+                                loc_info = (new_x, new_y, s, d, tp)
+                                loc[csv_id][t_id][start_ts][ts][car1_id][car2_id] = loc_info
+                # finish one start timestamp
+            # finish one target
+        print('finish one csv!')
 
         pickle_save_dir = work_dir+'pickle/'
         pickle_file = open(pickle_save_dir+'all_frenet_location.pkl', 'wb')
