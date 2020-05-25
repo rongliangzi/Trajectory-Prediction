@@ -40,24 +40,26 @@ def next_point_id(x, y, psi, path_points):
 
 
 # Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-def get_frenet(x, y, psi, path_points):
+def get_frenet(x, y, psi, path_points, frenet_s_list):
     next_wp = next_point_id(x, y, psi, path_points)
     prev_wp = next_wp-1
     if next_wp == 0:
         # prev_wp = len(path_points)-1
         prev_wp = 0
         next_wp = 1
-
+    while path_points[next_wp][0] == path_points[prev_wp][0] and path_points[next_wp][1] == path_points[prev_wp][1]:
+        prev_wp -= 1
     n_x = path_points[next_wp][0] - path_points[prev_wp][0]
     n_y = path_points[next_wp][1] - path_points[prev_wp][1]
     x_x = x - path_points[prev_wp][0]
     x_y = y - path_points[prev_wp][1]
 
     # find the projection of x onto n
+
     proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y)
     proj_x = proj_norm*n_x
     proj_y = proj_norm*n_y
-
+    # todo, judge the sign of d
     frenet_d = distance(x_x, x_y, proj_x, proj_y)
 
     # see if d value is positive or negative by comparing it to a center point
@@ -70,11 +72,14 @@ def get_frenet(x, y, psi, path_points):
     if center_to_pos <= center_to_ref:
         frenet_d *= -1
 
-    # calculate s value
-    frenet_s = 0
-    for i in range(prev_wp):
-        frenet_s += distance(path_points[i][0], path_points[i][1], path_points[i+1][0], path_points[i+1][1])
+    # # calculate s value
+    # frenet_s = 0
+    # for i in range(prev_wp):
+    #     frenet_s += distance(path_points[i][0], path_points[i][1], path_points[i+1][0], path_points[i+1][1])
+    #
 
+    # get s value from pre calculated list
+    frenet_s = frenet_s_list[prev_wp]
     frenet_s += distance(0, 0, proj_x, proj_y)
 
     return frenet_s, frenet_d

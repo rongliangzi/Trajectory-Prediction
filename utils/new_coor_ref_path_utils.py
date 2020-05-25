@@ -1,13 +1,47 @@
 from utils import dataset_reader
 from utils import dict_utils
 from utils.starting_area_utils import *
-from .ref_paths_utils import judge_in_box
 import numpy as np
 import math
 import glob
 import os
 import random
 import pickle
+
+
+def judge_in_box(x, y, p):
+    # judge if p in the polygon formed by x y
+    assert len(x) == len(y)
+    xl = len(x)
+    for i in range(xl-2):
+        same_side = judge_point_side((x[i], y[i]), (x[i+1], y[i+1]), (x[i+2], y[i+2]), p)
+        if same_side == 0:
+            return 0
+    same_side = judge_point_side((x[xl-2], y[xl-2]), (x[xl-1], y[xl-1]), (x[0], y[0]), p)
+    if same_side == 0:
+        return 0
+    same_side = judge_point_side((x[xl-1], y[xl-1]), (x[0], y[0]), (x[1], y[1]), p)
+    if same_side == 0:
+        return 0
+    return 1
+
+
+def judge_point_side(p1, p2, p3, p4):
+    # judge if p3 p4 are in the same side of p1 p2
+    if p1[0] == p2[0]:
+        if p3[0] > p1[0] > p4[0] or p4[0] > p1[0] > p3[0]:
+            return 0
+        else:
+            return 1
+    else:
+        k = (p2[1]-p1[1])/(p2[0]-p1[0])
+        b = (p2[0]*p1[1]-p1[0]*p2[1])/(p2[0]-p1[0])
+        y3 = p3[0] * k + b
+        y4 = p4[0] * k + b
+        if (y3 < p3[1] and y4 < p4[1]) or (y3 > p3[1] and y4 > p4[1]):
+            return 1
+        else:
+            return 0
 
 
 def judge_start_new(ms, track):
@@ -170,6 +204,8 @@ def get_ref_paths(base_path, dir_name):
             x_points = []
             y_points = []
             for i, point in enumerate(xy[:-1]):
+                if point[0] == xy[i+1][0] and point[1] == xy[i+1][1]:
+                    continue
                 x_points.append(point[0])
                 x_points.append((point[0]+xy[i+1][0])/2)
                 y_points.append(point[1])

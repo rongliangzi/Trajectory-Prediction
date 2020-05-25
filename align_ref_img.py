@@ -1,7 +1,7 @@
 from utils import new_coor_ref_path_utils
 from utils import coordinate_transform
 from utils import map_vis_without_lanelet
-from utils.starting_area_utils import new_coor_starting_area_dict
+from utils.starting_area_utils import *
 from utils.intersection_utils import *
 import numpy as np
 import math
@@ -11,7 +11,7 @@ import os
 import pickle
 
 
-def rotate_aug(x, y, intersection, theta):
+def counterclockwise_rotate(x, y, intersection, theta):
     # rotate the x,y point counterclockwise at angle theta around intersection point
     x_rot = (x - intersection[0]) * math.cos(theta) - (y - intersection[1]) * math.sin(theta) + intersection[0]
     y_rot = (x - intersection[0]) * math.sin(theta) + (y - intersection[1]) * math.cos(theta) + intersection[1]
@@ -35,9 +35,9 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
     :return: save the figure
     '''
     d = 8  # fig size
-    r = 80  # range of x and y
+    r = 200  # range of x and y
     al = 8  # arrow length
-    dpi = 50
+    dpi = 25
     fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
     if bg:
         lanelet_map_file = "D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm"
@@ -45,7 +45,7 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
     else:
         # set bg to black
         axes.patch.set_facecolor("k")
-    circle = patches.Circle(intersection, (w1 + w2) * 2 * d / r, color='r', zorder=3)
+    circle = patches.Circle(intersection, (w1 + w2) * 6 * rate * d / r, color='r', zorder=3)
     axes.add_patch(circle)
     # calculate the k as the tangent
     if id1+1 >= len(x1):
@@ -70,8 +70,8 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
         theta2 += 2*math.pi
     if bg:
         # before rotation
-        plt.plot(x1, y1, linewidth=w1 * 72 * d // r, color='b')
-        plt.plot(x2, y2, linewidth=w2 * 72 * d // r, color='g')
+        plt.plot(x1, y1, linewidth=w1 * 72 * rate * d // r, color='b')
+        plt.plot(x2, y2, linewidth=w2 * 72 * rate * d // r, color='g')
         delta_xy1 = (delta_x1 ** 2 + delta_y1 ** 2) ** 0.5
         ar_x1, ar_y1 = delta_x1 / delta_xy1, delta_y1 / delta_xy1
         axes.arrow(x1[id1], y1[id1], al * ar_x1, al * ar_y1, zorder=30, color='purple', width=0.2, head_width=0.6)
@@ -88,10 +88,10 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
 
     # draw the arrow whose length is al
     # rotate according to angle bisector to align
-    x1_rot, y1_rot = rotate_aug(x1, y1, intersection, -avg_theta)
-    x2_rot, y2_rot = rotate_aug(x2, y2, intersection, -avg_theta)
-    plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * d // r, color='b')
-    plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * d // r, color='g')
+    x1_rot, y1_rot = counterclockwise_rotate(x1, y1, intersection, -avg_theta)
+    x2_rot, y2_rot = counterclockwise_rotate(x2, y2, intersection, -avg_theta)
+    plt.plot(x1_rot, y1_rot, linewidth=w1 * 72 * rate * d // r, color='b')
+    plt.plot(x2_rot, y2_rot, linewidth=w2 * 72 * rate * d // r, color='g')
     if bg:
         axes.arrow(x1[id1], y1[id1], al/(k1_rot**2+1)**0.5, al * k1_rot/(k1_rot**2+1)**0.5, zorder=4,
                    color='purple', width=0.2, head_width=0.6)
@@ -118,7 +118,7 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
 
 
 def main(work_dir):
-    ref_path_info_path = work_dir + 'pickle/ref_path_info.pkl'
+    ref_path_info_path = work_dir + 'pickle/ref_path_info_new.pkl'
     pickle_file = open(ref_path_info_path, 'rb')
     ref_path_info = pickle.load(pickle_file)
     pickle_file.close()
@@ -144,14 +144,11 @@ def main(work_dir):
                 continue
             intersection = find_intersection(seq1, seq2)
 
-            if intersection is None:
-                # no intersection
-                continue
-            else:
+            if intersection is not None:
                 # intersection of path1 and path2 exists
                 intersection, first_id, second_id = intersection
-                intersection_info[path1][path2] = intersection
-                intersection_info[path2][path1] = intersection
+                intersection_info[path1][path2] = (intersection, first_id, second_id)
+                intersection_info[path2][path1] = (intersection, second_id, first_id)
 
                 theta = plot_aligned_img(seq1[0], seq1[1], seq1[4], seq2[0], seq2[1], seq2[4], path1+' '+path2,
                                          intersection, first_id, second_id, work_dir)
@@ -159,11 +156,11 @@ def main(work_dir):
                 degree = 2
                 # rotate x1,y1 +- degree around intersection and plot
                 theta = math.pi*degree/180
-                x1_rot, y1_rot = rotate_aug(seq1[0], seq1[1], intersection, theta)
+                x1_rot, y1_rot = counterclockwise_rotate(seq1[0], seq1[1], intersection, theta)
                 plot_aligned_img(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4],
                                           path1+' '+path2+'_'+str(degree), intersection, first_id, second_id, work_dir)
 
-                x1_rot, y1_rot = rotate_aug(seq1[0], seq1[1], intersection, -theta)
+                x1_rot, y1_rot = counterclockwise_rotate(seq1[0], seq1[1], intersection, -theta)
                 plot_aligned_img(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4],
                                   path1 + ' ' + path2 + '_-' + str(degree),
                                   intersection, first_id, second_id, work_dir)
@@ -175,6 +172,9 @@ def main(work_dir):
     pickle_file = open(pickle_save_dir + 'ref_path_img_theta.pkl', 'wb')
     pickle.dump(ref_path_img_theta, pickle_file)
     pickle_file.close()
+    pickle_file = open(pickle_save_dir + 'ref_path_intersection.pkl', 'wb')
+    pickle.dump(intersection_info, pickle_file)
+    pickle_file.close()
     return
 
 
@@ -182,4 +182,4 @@ if __name__ == '__main__':
     data_base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
     data_dir_name = 'DR_USA_Intersection_MA/'
     save_base_dir = 'D:/Dev/UCB task/'
-    # main(save_base_dir)
+    main(save_base_dir)

@@ -45,7 +45,7 @@ def find_intersection(seq1, seq2):
     dis = cal_dis(x, y)
     min_dis = dis.min()
 
-    if min_dis > 3:
+    if min_dis > 15:
         # no intersection point
         return None
     intersection = find_merging_point(x, y, dis)
