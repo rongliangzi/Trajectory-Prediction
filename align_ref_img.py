@@ -1,6 +1,3 @@
-from utils import new_coor_ref_path_utils
-from utils import coordinate_transform
-from utils import map_vis_without_lanelet
 from utils.starting_area_utils import *
 from utils.intersection_utils import *
 import numpy as np
@@ -9,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
 import pickle
+import random
 
 
 def counterclockwise_rotate(x, y, intersection, theta):
@@ -18,7 +16,7 @@ def counterclockwise_rotate(x, y, intersection, theta):
     return x_rot, y_rot
 
 
-def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, work_dir, bg=False):
+def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, save_dir, bg=False):
     '''
     :param x1: x list
     :param y1: y list
@@ -30,7 +28,7 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
     :param intersection: (x,y) of intersection
     :param id1: id of the intersection point in x1
     :param id2:
-    :param work_dir: directory to save figure
+    :param save_dir: directory to save figure
     :param bg: if plot background
     :return: save the figure
     '''
@@ -107,7 +105,7 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2, w
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-    save_dir = work_dir + 'intersection_figs/'
+
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     if bg:
@@ -125,11 +123,14 @@ def main(work_dir):
     ref_paths, csv_dict, rare_paths = ref_path_info['ref_paths'], ref_path_info['csv_dict'], ref_path_info['rare_paths']
     rare_paths += ['6-4']
     path_names = sorted(ref_paths.keys())
-    intersection_info = dict()
-    for path_name in path_names:
-        intersection_info[path_name] = dict()
+
+    pickle_file = open(work_dir + 'pickle/ref_path_intersection.pkl', 'rb')
+    intersection_info = pickle.load(pickle_file)
+    pickle_file.close()
+
     ref_path_img_theta = dict()
     img_count = 0
+    save_dir = work_dir + 'intersection_figs/aug20_100/'
     for i in range(len(path_names)):
         path1 = path_names[i]
         if path1 in rare_paths:
@@ -138,42 +139,30 @@ def main(work_dir):
             path2 = path_names[j]
             if path2 in rare_paths:
                 continue
+            if path2 not in intersection_info[path1].keys():
+                continue
+            intersection, first_id, second_id = intersection_info[path1][path2]
             seq1 = ref_paths[path1]
             seq2 = ref_paths[path2]
-            if path1.split('-')[0] == path2.split('-')[0]:
-                continue
-            intersection = find_intersection(seq1, seq2)
-
-            if intersection is not None:
-                # intersection of path1 and path2 exists
-                intersection, first_id, second_id = intersection
-                intersection_info[path1][path2] = (intersection, first_id, second_id)
-                intersection_info[path2][path1] = (intersection, second_id, first_id)
-
-                theta = plot_aligned_img(seq1[0], seq1[1], seq1[4], seq2[0], seq2[1], seq2[4], path1+' '+path2,
-                                         intersection, first_id, second_id, work_dir)
-                ref_path_img_theta[path1+'_'+path2] = theta
-                degree = 2
-                # rotate x1,y1 +- degree around intersection and plot
-                theta = math.pi*degree/180
+            # origin image
+            theta = plot_aligned_img(seq1[0], seq1[1], seq1[4], seq2[0], seq2[1], seq2[4], path1 + ' ' + path2,
+                                     intersection, first_id, second_id, save_dir)
+            ref_path_img_theta[path1 + '_' + path2] = theta
+            # aug images
+            for aug in range(99):
+                degree = (random.random() - 0.5) * 40
+                # rotate x1,y1 degree around intersection and plot
+                theta = math.pi * degree / 180
                 x1_rot, y1_rot = counterclockwise_rotate(seq1[0], seq1[1], intersection, theta)
                 plot_aligned_img(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4],
-                                          path1+' '+path2+'_'+str(degree), intersection, first_id, second_id, work_dir)
-
-                x1_rot, y1_rot = counterclockwise_rotate(seq1[0], seq1[1], intersection, -theta)
-                plot_aligned_img(x1_rot, y1_rot, seq1[4], seq2[0], seq2[1], seq2[4],
-                                  path1 + ' ' + path2 + '_-' + str(degree),
-                                  intersection, first_id, second_id, work_dir)
-                img_count += 3
-                print(img_count)
-                # break
+                                 path1 + ' ' + path2 + '_' + str(aug + 1), intersection, first_id, second_id,
+                                 save_dir)
+            img_count += 100
+            print(img_count)
         # break
     pickle_save_dir = work_dir + 'pickle/'
     pickle_file = open(pickle_save_dir + 'ref_path_img_theta.pkl', 'wb')
     pickle.dump(ref_path_img_theta, pickle_file)
-    pickle_file.close()
-    pickle_file = open(pickle_save_dir + 'ref_path_intersection.pkl', 'wb')
-    pickle.dump(intersection_info, pickle_file)
     pickle_file.close()
     return
 

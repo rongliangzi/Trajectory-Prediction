@@ -1,6 +1,7 @@
 from utils.starting_area_utils import *
 from utils import new_coor_ref_path_utils
 from utils.coordinate_transform import *
+from utils.intersection_utils import find_intersection
 from align_ref_img import counterclockwise_rotate
 import pickle
 import numpy as np
@@ -163,6 +164,41 @@ def gen_all_location_info(work_dir):
     return
 
 
+def gen_intersection_info(work_dir):
+    ref_path_info_path = work_dir + 'pickle/ref_path_info_new.pkl'
+    pickle_file = open(ref_path_info_path, 'rb')
+    ref_path_info = pickle.load(pickle_file)
+    pickle_file.close()
+    ref_paths, rare_paths = ref_path_info['ref_paths'], ref_path_info['rare_paths']
+    rare_paths += ['6-4']
+    path_names = sorted(ref_paths.keys())
+    intersection_info = dict()
+    for path_name in path_names:
+        intersection_info[path_name] = dict()
+    for i in range(len(path_names)):
+        path1 = path_names[i]
+        if path1 in rare_paths:
+            continue
+        for j in range(i + 1, len(path_names)):
+            path2 = path_names[j]
+            if path2 in rare_paths:
+                continue
+            seq1 = ref_paths[path1]
+            seq2 = ref_paths[path2]
+            if path1.split('-')[0] == path2.split('-')[0]:
+                continue
+            intersection = find_intersection(seq1, seq2)
+            if intersection is not None:
+                # intersection of path1 and path2 exists
+                intersection, first_id, second_id = intersection
+                intersection_info[path1][path2] = (intersection, first_id, second_id)
+                intersection_info[path2][path1] = (intersection, second_id, first_id)
+    pickle_file = open(work_dir + 'pickle/ref_path_intersection.pkl', 'wb')
+    pickle.dump(intersection_info, pickle_file)
+    pickle_file.close()
+    return
+
+
 if __name__ == '__main__':
     data_base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
     data_dir_name = 'DR_USA_Intersection_MA/'
@@ -170,4 +206,5 @@ if __name__ == '__main__':
     # save_ref_path_pickle()
     # plot_starting_area(save_base_dir)
     # gen_frenet(save_base_dir)
-    gen_all_location_info(save_base_dir)
+    # gen_all_location_info(save_base_dir)
+    # gen_intersection_info(save_base_dir)
