@@ -83,3 +83,27 @@ def get_frenet(x, y, psi, path_points, frenet_s_list):
     frenet_s += distance(0, 0, proj_x, proj_y)
 
     return frenet_s, frenet_d
+
+
+# Transform from Frenet s,d coordinates to Cartesian x,y
+def get_xy(s, d, path_s, path_wp):
+    prev_wp = -1
+
+    while s > path_s[prev_wp + 1] and prev_wp < len(path_s) - 1:
+        prev_wp += 1
+
+    next_wp = (prev_wp + 1) % len(path_s)
+
+    heading = math.atan2((path_wp[next_wp][1] - path_wp[prev_wp][1]), (path_wp[next_wp][0]-path_wp[prev_wp][0]))
+    # the x,y,s along the segment
+    seg_s = s - path_s[prev_wp]
+
+    seg_x = path_wp[prev_wp][0] + seg_s * math.cos(heading)
+    seg_y = path_wp[prev_wp][1] + seg_s * math.sin(heading)
+
+    perp_heading = heading-math.pi/2
+
+    x = seg_x + d * math.cos(perp_heading)
+    y = seg_y + d * math.sin(perp_heading)
+
+    return x, y

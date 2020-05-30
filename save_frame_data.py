@@ -41,6 +41,12 @@ def main(work_dir):
         ref_frenet[path_name]['min_dis_id'] = min_dis_id
     print('time:', time.time()-start_time)
 
+    coor_dict = dict()
+    for csv_id, tracks in csv_dict.items():
+        coor_dict[csv_id] = dict()
+        for car, car_path in tracks:
+            coor_dict[csv_id][car.track_id] = car
+
     for csv_id, tracks in csv_dict.items():
         # for each csv, save a dict to pickle
         loc = dict()
@@ -140,6 +146,8 @@ def main(work_dir):
                 for ts in range(start_ts, start_ts + 70 * 100, 100):
                     loc[t_id][start_ts][ts] = dict()
                     # calculate the frenet coordinates of other cars and judge if in the box
+                    t_ms = target.motion_states[ts]
+                    theta = math.pi / 2 - t_ms.psi_rad
                     for car1_id in agent_list:
                         for car2_id in agent_list:
                             if car1_id == car2_id:
@@ -148,7 +156,16 @@ def main(work_dir):
                                 continue
                             if car2_id not in all_loc[csv_id][car1_id][ts].keys():
                                 continue
-                            new_x, new_y, s, d, tp = all_loc[csv_id][car1_id][ts][car2_id]
+
+                            _, _, s, d, tp = all_loc[csv_id][car1_id][ts][car2_id]
+                            x1 = coor_dict[csv_id][car1_id].motion_states[ts].x
+                            y1 = coor_dict[csv_id][car1_id].motion_states[ts].y
+                            x2 = coor_dict[csv_id][car2_id].motion_states[ts].x
+                            y2 = coor_dict[csv_id][car2_id].motion_states[ts].y
+                            x1_rot, y1_rot = counterclockwise_rotate(x1, y1, [t_ms.x, t_ms.y], theta)
+                            x2_rot, y2_rot = counterclockwise_rotate(x2, y2, [t_ms.x, t_ms.y], theta)
+                            new_x = x1_rot - x2_rot
+                            new_y = y1_rot - y2_rot
                             loc_info = (new_x, new_y, s, d, tp)
                             if car1_id not in loc[t_id][start_ts][ts].keys():
                                 loc[t_id][start_ts][ts][car1_id] = dict()
