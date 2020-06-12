@@ -6,7 +6,7 @@ import math
 import glob
 import os
 import random
-import pickle
+import csv
 
 
 def judge_in_box(x, y, p):
@@ -217,3 +217,61 @@ def get_ref_paths(base_path, dir_name):
             ref_paths[k] = ref_path
 
     return ref_paths, csv_dict, rare_paths
+
+
+def ln_func(coef, v):
+    assert len(coef) == 4, 'coef must have length 4, but has {}'.format(len(coef))
+    result = (coef[0] + coef[1] * np.log(coef[2] * v - coef[3]))
+    result = np.array(result)
+    return result
+
+
+def get_defined_ref_paths(defined_file, csv_dir, x_start, y_start):
+    csv_dict = dict()
+    paths = glob.glob(os.path.join(csv_dir, '*.csv'))
+    paths.sort()
+    for csv_name in paths:
+        track_dictionary = dataset_reader.read_tracks(csv_name)
+        tracks = dict_utils.get_value_list(track_dictionary)
+        agent_path = dict()
+        for agent in tracks:
+            # transform the coordinate
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                agent.motion_states[ts].x = (agent.motion_states[ts].x - x_start) * rate
+                agent.motion_states[ts].y = (agent.motion_states[ts].y - y_start) * rate
+            agent_path[agent.track_id] = agent
+        csv_dict[csv_name[-7:-4]] = agent_path
+    ref_paths = dict()
+    with open(defined_file) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for i, row in enumerate(list(csv_reader)[1:]):
+            ref_path_id = int(row[1])
+            xy_flag = int(float(row[5]))
+            ln_flag = row[6]
+            coef = []
+            x_min = float(row[7])
+            x_max = float(row[8])
+            y_min = float(row[9])
+            y_max = float(row[10])
+            sp = row[4][1:-1].split(', ')
+            for s in sp:
+                if s:
+                    coef += [float(s)]
+            # coef = coef[::-1]
+            if ln_flag == 'False':
+                poly_func = np.poly1d(coef)
+                if xy_flag == 1:
+                    ref_path_y = np.arange(y_min, y_max, 0.2)
+                    ref_path_x = poly_func(ref_path_y)
+                else:
+                    ref_path_x = np.arange(x_min, x_max, 0.2)
+                    ref_path_y = poly_func(ref_path_x)
+            else:
+                if xy_flag == 1:
+                    ref_path_y = np.arange(y_min, y_max, 0.2)
+                    ref_path_x = ln_func(coef, ref_path_y)
+                else:
+                    ref_path_x = np.arange(x_min, x_max, 0.2)
+                    ref_path_y = ln_func(coef, ref_path_x)
+            ref_paths[ref_path_id] = [ref_path_x, ref_path_y, None, None, None]
+    return ref_paths, csv_dict

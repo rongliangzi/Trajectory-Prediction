@@ -5,6 +5,7 @@ from utils.intersection_utils import find_intersection
 from align_ref_img import counterclockwise_rotate
 import pickle
 import numpy as np
+import csv
 
 
 # transform points in a ref path to frenet coordinate
@@ -40,6 +41,18 @@ def save_ref_path_pickle():
     ref_path_info['rare_paths'] = rare_paths
     pickle_save_dir = save_base_dir + 'pickle/'
     pickle_file = open(pickle_save_dir + 'ref_path_info_new.pkl', 'wb')
+    pickle.dump(ref_path_info, pickle_file)
+    pickle_file.close()
+
+
+def save_defined_ref_path_pickle():
+    ref_paths, csv_dict = new_coor_ref_path_utils.get_defined_ref_paths(defined_path_file, csv_path, x_start, y_start)
+    ref_path_info = dict()
+    ref_path_info['ref_paths'] = ref_paths
+    ref_path_info['csv_dict'] = csv_dict
+    ref_path_info['rare_paths'] = []
+    pickle_save_dir = save_base_dir + 'pickle/'
+    pickle_file = open(pickle_save_dir + 'ref_path_info_{}.pkl'.format(name), 'wb')
     pickle.dump(ref_path_info, pickle_file)
     pickle_file.close()
 
@@ -199,10 +212,41 @@ def gen_intersection_info(work_dir):
     return
 
 
+def gen_defined_intersection_info(work_dir):
+    intersection_info = dict()
+    with open(defined_intersection_file) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for i, row in enumerate(list(csv_reader)[1:]):
+            first_ref_path_id = int(row[1])
+            second_ref_path_id = int(row[2])
+            if first_ref_path_id not in intersection_info.keys():
+                intersection_info[first_ref_path_id] = dict()
+            if second_ref_path_id not in intersection_info.keys():
+                intersection_info[second_ref_path_id] = dict()
+            if row[3] == 'NULL':
+                continue
+            inter_x = float(row[3])
+            inter_y = float(row[4])
+            intersection_info[first_ref_path_id][second_ref_path_id] = ((inter_x, inter_y), None, None)
+            intersection_info[second_ref_path_id][first_ref_path_id] = ((inter_x, inter_y), None, None)
+    pickle_file = open(work_dir + 'pickle/intersection_{}.pkl'.format(name), 'wb')
+    pickle.dump(intersection_info, pickle_file)
+    pickle_file.close()
+
+
 if __name__ == '__main__':
     data_base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
-    data_dir_name = 'DR_USA_Intersection_MA/'
+    csv_path = 'D:/Dev/UCB task/track_updated/'
+    # data_dir_name = 'DR_USA_Intersection_MA/'
+    data_dir_name = 'DR_USA_Roundabout_EP'
     save_base_dir = 'D:/Dev/UCB task/'
+    defined_path_file = 'D:/Dev/UCB task/RoundaboutEP_updated/ref_path_ROUNDABOUT_EP.csv'
+    defined_intersection_file = 'D:/Dev/UCB task/RoundaboutEP_updated/interception_ROUNDABOUT_EP.csv'
+    name = 'EP'
+    x_start = 959
+    y_start = 974
+    save_defined_ref_path_pickle()
+    gen_defined_intersection_info(save_base_dir)
     # save_ref_path_pickle()
     # plot_starting_area(save_base_dir)
     # gen_frenet(save_base_dir)

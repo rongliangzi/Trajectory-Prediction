@@ -31,6 +31,7 @@ class KeyEnum:
     psi_rad = 8
     length = 9
     width = 10
+    ref_path_id = 11
 
 
 def read_tracks(filename):
@@ -40,6 +41,7 @@ def read_tracks(filename):
 
         track_dict = dict()
         track_id = None
+        ref_path_col = False
 
         for i, row in enumerate(list(csv_reader)):
 
@@ -56,6 +58,8 @@ def read_tracks(filename):
                 assert(row[KeyEnum.psi_rad] == Key.psi_rad)
                 assert(row[KeyEnum.length] == Key.length)
                 assert(row[KeyEnum.width] == Key.width)
+                if len(row) == 12 and row[11] == 'ref_path_id':
+                    ref_path_col = True
                 continue
 
             if int(row[KeyEnum.track_id]) != track_id:
@@ -69,6 +73,8 @@ def read_tracks(filename):
                 track.width = float(row[KeyEnum.width])
                 track.time_stamp_ms_first = int(row[KeyEnum.time_stamp_ms])
                 track.time_stamp_ms_last = int(row[KeyEnum.time_stamp_ms])
+                if ref_path_col:
+                    track.ref_path_id = int(row[KeyEnum.ref_path_id])
                 track_dict[track_id] = track
 
             track = track_dict[track_id]
