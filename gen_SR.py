@@ -14,45 +14,33 @@ from utils import dataset_reader
 from utils import dict_utils
 from utils.coordinate_transform import get_frenet
 
-starting_area_dict = dict()
-starting_area_dict[1] = dict()
-starting_area_dict[1]['x'] = [990, 990.2, 1000.3, 1000]
-starting_area_dict[1]['y'] = [988, 984, 983.5, 988]
-starting_area_dict[3] = dict()
-starting_area_dict[3]['x'] = [994.5, 999, 1004.5, 1002.1]
-starting_area_dict[3]['y'] = [1019, 1010, 1011.9, 1020.2]
-starting_area_dict[5] = dict()
-starting_area_dict[5]['x'] = [1036, 1030, 1032.5, 1039]
-starting_area_dict[5]['y'] = [1024, 1019, 1016, 1023]
-starting_area_dict[7] = dict()
-starting_area_dict[7]['x'] = [1041, 1041.2, 1051, 1050.5]
-starting_area_dict[7]['y'] = [1010, 1005.5, 1007.4, 1010.5]
-starting_area_dict[9] = dict()
-starting_area_dict[9]['x'] = [1040.5, 1045.2, 1047.4, 1041.6]
-starting_area_dict[9]['y'] = [984.3, 981.2, 984.6, 989.2]
-starting_area_dict[11] = dict()
-starting_area_dict[11]['x'] = [1033, 1038, 1041.3, 1037.1]
-starting_area_dict[11]['y'] = [978, 971, 973, 980]
+SR_starting_area_dict = dict()
+SR_starting_area_dict[1] = dict()
+SR_starting_area_dict[1]['x'] = [957.2, 955.2, 968.8, 968.7]
+SR_starting_area_dict[1]['y'] = [1015.8, 1009.6, 1006.7, 1013.6]
+SR_starting_area_dict[3] = dict()
+SR_starting_area_dict[3]['x'] = [986.6, 980.8, 989.6, 993.2]
+SR_starting_area_dict[3]['y'] = [1058, 1047, 1046.8, 1059.5]
+SR_starting_area_dict[5] = dict()
+SR_starting_area_dict[5]['x'] = [1015.3, 1013.2, 1027, 1029.3]
+SR_starting_area_dict[5]['y'] = [1034.9, 1027, 1024, 1030]
+SR_starting_area_dict[7] = dict()
+SR_starting_area_dict[7]['x'] = [989, 988.2, 993.4, 997.2]
+SR_starting_area_dict[7]['y'] = [991.5, 984.9, 984.8, 991.1]
 
-end_area_dict = dict()
-end_area_dict[2] = dict()
-end_area_dict[2]['x'] = [991.5, 985.4, 985.9, 992.2]
-end_area_dict[2]['y'] = [999, 996.2, 993.7, 995.4]
-end_area_dict[4] = dict()
-end_area_dict[4]['x'] = [1003.5, 1007.1, 1012.2, 1009.6]
-end_area_dict[4]['y'] = [1022.8, 1019.5, 1023.2, 1026.3]
-end_area_dict[6] = dict()
-end_area_dict[6]['x'] = [1035.7, 1040.8, 1044.8, 1040.3]
-end_area_dict[6]['y'] = [1015.4, 1012.3, 1018.1, 1021.9]
-end_area_dict[8] = dict()
-end_area_dict[8]['x'] = [1042, 1043.8, 1049.3, 1048.6]
-end_area_dict[8]['y'] = [1004.8, 1001.5, 1003.4, 1006]
-end_area_dict[10] = dict()
-end_area_dict[10]['x'] = [1041.6, 1049.3, 1051.3, 1043.6]
-end_area_dict[10]['y'] = [978.6, 973.4, 976.5, 981.9]
-end_area_dict[12] = dict()
-end_area_dict[12]['x'] = [1029.2, 1034.4, 1038.6, 1033.2]
-end_area_dict[12]['y'] = [975.4, 967.6, 969.3, 977]
+SR_end_area_dict = dict()
+SR_end_area_dict[2] = dict()
+SR_end_area_dict[2]['x'] = [953.2, 954, 968.7, 968]
+SR_end_area_dict[2]['y'] = [1032.6, 1025.7, 1027.8, 1037]
+SR_end_area_dict[4] = dict()
+SR_end_area_dict[4]['x'] = [994.5, 995, 1004.4, 1001.2]
+SR_end_area_dict[4]['y'] = [1056, 1047, 1046, 1056.6]
+SR_end_area_dict[6] = dict()
+SR_end_area_dict[6]['x'] = [1013.1, 1014, 1025.1, 1025.4]
+SR_end_area_dict[6]['y'] = [1013.3, 1004, 1006.3, 1012.8]
+SR_end_area_dict[8] = dict()
+SR_end_area_dict[8]['x'] = [981.2, 983.9, 987.8, 987.9]
+SR_end_area_dict[8]['y'] = [995.2, 989, 988.5, 995.4]
 
 
 def on_press(event):
@@ -64,7 +52,7 @@ def judge_start(track):
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
         motion_state = track.motion_states[ts]
         cur_p = (motion_state.x, motion_state.y)
-        for k, v in starting_area_dict.items():
+        for k, v in SR_starting_area_dict.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
                 return k
@@ -76,7 +64,7 @@ def judge_end(track):
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
         motion_state = track.motion_states[ts]
         cur_p = (motion_state.x, motion_state.y)
-        for k, v in end_area_dict.items():
+        for k, v in SR_end_area_dict.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
                 return k
@@ -85,24 +73,24 @@ def judge_end(track):
 
 # transform points in a ref path to frenet coordinate
 def ref_point2frenet(x_points, y_points):
-    frenet_s_points = [0]
+    points_frenet_s = [0]
     for i in range(1, len(x_points)):
         prev_x = x_points[i-1]
         prev_y = y_points[i-1]
         x = x_points[i]
         y = y_points[i]
         s_dis = ((x-prev_x)**2+(y-prev_y)**2)**0.5
-        frenet_s_points.append(frenet_s_points[i-1]+s_dis)
-    frenet_s_points = np.array(frenet_s_points)
+        points_frenet_s.append(points_frenet_s[i-1]+s_dis)
+    frenet_s_points = np.array(points_frenet_s)
     return frenet_s_points
 
 
-def ref_path2frenet(ref_paths):
-    ref_frenet = dict()
+def ref_paths2frenet(ref_paths):
+    ref_frenet_coor = dict()
     for path_name, path_points in ref_paths.items():
-        frenet_s_points = ref_point2frenet(path_points[:, 0], path_points[:, 1])
-        ref_frenet[path_name] = frenet_s_points
-    return ref_frenet
+        points_frenet_s = ref_point2frenet(path_points[:, 0], path_points[:, 1])
+        ref_frenet_coor[path_name] = points_frenet_s
+    return ref_frenet_coor
 
 
 def get_track_label(dir_name):
@@ -123,19 +111,21 @@ def get_track_label(dir_name):
             start_area = judge_start(agent)
             end_area = judge_end(agent)
             if start_area == 0 or end_area == 0:
+                print(0)
                 continue
             k = str(start_area) + '-' + str(end_area)
             if k not in ref_path_points:
                 k = str(start_area) + '--1-' + str(end_area)
             xy_points = ref_path_points[k]
-            frenet = []
+            agent_frenet = []
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
                 x = agent.motion_states[ts].x
                 y = agent.motion_states[ts].y
                 psi_rad = agent.motion_states[ts].psi_rad
                 frenet_s, _ = get_frenet(x, y, psi_rad, xy_points, ref_point_frenet[k])
-                frenet.append(frenet_s)
-            agent_path[agent.track_id] = {'data': agent, 'ref path': k, 'frenet': frenet}
+                agent_frenet.append(frenet_s)
+            agent_path[agent.track_id] = {'data': agent, 'ref path': k,
+                                          'frenet': agent_frenet}
         csv_dict[csv_name[-7:-4]] = agent_path
     return csv_dict
 
@@ -147,7 +137,15 @@ def plot_raw_ref_path(map_file, all_points, circle_point):
         x = [p[0] for p in way_points]
         y = [p[1] for p in way_points]
         plt.plot(x, y, linewidth=4)
-    for key, v in starting_area_dict.items():
+    for key, v in SR_starting_area_dict.items():
+        x = v['x']
+        y = v['y']
+        plt.text(x[0], y[0], key, fontsize=20)
+        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
+        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
+        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
+        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    for key, v in SR_end_area_dict.items():
         x = v['x']
         y = v['y']
         plt.text(x[0], y[0], key, fontsize=20)
@@ -180,6 +178,7 @@ def plot_ref_path_divided(map_file, ref_path_points):
         yp = [p[1] for p in v]
         axes[i // 3][i % 3].plot(xp, yp, linewidth=4)
     plt.subplots_adjust(top=1, bottom=0, left=0.05, right=0.95, hspace=0.1, wspace=0.1)
+    fig.canvas.mpl_connect('button_press_event', on_press)
     plt.show()
 
 
@@ -192,6 +191,7 @@ def plot_ref_path(map_file, ref_path_points):
         xp = [p[0] for p in v]
         yp = [p[1] for p in v]
         plt.plot(xp, yp, linewidth=4)
+    fig.canvas.mpl_connect('button_press_event', on_press)
     plt.show()
 
 
@@ -278,23 +278,24 @@ def get_ref_path(data, cx, cy):
 
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
-    map_name = "DR_USA_Roundabout_FT.osm"
-    dataFile = 'D:/Dev/UCB task/Segmented_reference_path_DR_USA_Roundabout_FT.mat'
+    map_name = "DR_USA_Roundabout_SR.osm"
+    dataFile = 'D:/Dev/UCB task/Segmented_reference_path_DR_USA_Roundabout_SR.mat'
     data = scio.loadmat(dataFile)
     para_path = data['Segmented_reference_path']['para_path']
     circle_merge_point = data['Segmented_reference_path']['circle_merge_point'][0]
-    # plot_raw_ref_path(map_dir + map_name, para_path, circle_merge_point)
+    plot_raw_ref_path(map_dir + map_name, para_path, circle_merge_point)
 
     cx, cy = fit_circle(circle_merge_point)
     # a dict, call by path return an array(x,2)
     ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
 
     # plot_ref_path_divided(map_dir + map_name, ref_path_points)
-    plot_ref_path(map_dir + map_name, ref_path_points)
+    # plot_ref_path(map_dir + map_name, ref_path_points)
 
-    # # a dict, call by path return an array(x,1): frenet of ref path points
-    # ref_point_frenet = ref_path2frenet(ref_path_points)
-    # csv_dict = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/')
-    # pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'wb')
-    # pickle.dump(csv_dict, pickle_file)
-    # pickle_file.close()
+    # a dict, call by path return an array(x,1): frenet of ref path points
+    ref_point_frenet = ref_paths2frenet(ref_path_points)
+    csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/')
+    pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
+    pickle.dump(csv_data, pickle_file)
+    pickle_file.close()
+
