@@ -14,45 +14,45 @@ from utils import dataset_reader
 from utils import dict_utils
 from utils.coordinate_transform import get_frenet
 
-starting_area_dict = dict()
-starting_area_dict[1] = dict()
-starting_area_dict[1]['x'] = [990, 990.2, 1000.3, 1000]
-starting_area_dict[1]['y'] = [988, 984, 983.5, 988]
-starting_area_dict[3] = dict()
-starting_area_dict[3]['x'] = [994.5, 999, 1004.5, 1002.1]
-starting_area_dict[3]['y'] = [1019, 1010, 1011.9, 1020.2]
-starting_area_dict[5] = dict()
-starting_area_dict[5]['x'] = [1036, 1030, 1032.5, 1039]
-starting_area_dict[5]['y'] = [1024, 1019, 1016, 1023]
-starting_area_dict[7] = dict()
-starting_area_dict[7]['x'] = [1041, 1041.2, 1051, 1050.5]
-starting_area_dict[7]['y'] = [1010, 1005.5, 1007.4, 1010.5]
-starting_area_dict[9] = dict()
-starting_area_dict[9]['x'] = [1040.5, 1045.2, 1047.4, 1041.6]
-starting_area_dict[9]['y'] = [984.3, 981.2, 984.6, 989.2]
-starting_area_dict[11] = dict()
-starting_area_dict[11]['x'] = [1033, 1038, 1041.3, 1037.1]
-starting_area_dict[11]['y'] = [978, 971, 973, 980]
+FT_starting_area_dict = dict()
+FT_starting_area_dict[1] = dict()
+FT_starting_area_dict[1]['x'] = [990, 990.2, 1000.3, 1000]
+FT_starting_area_dict[1]['y'] = [988, 984, 983.5, 988]
+FT_starting_area_dict[3] = dict()
+FT_starting_area_dict[3]['x'] = [994.5, 999, 1004.5, 1002.1]
+FT_starting_area_dict[3]['y'] = [1019, 1010, 1011.9, 1020.2]
+FT_starting_area_dict[5] = dict()
+FT_starting_area_dict[5]['x'] = [1036, 1030, 1032.5, 1039]
+FT_starting_area_dict[5]['y'] = [1024, 1019, 1016, 1023]
+FT_starting_area_dict[7] = dict()
+FT_starting_area_dict[7]['x'] = [1041, 1041.2, 1051, 1050.5]
+FT_starting_area_dict[7]['y'] = [1010, 1005.5, 1007.4, 1010.5]
+FT_starting_area_dict[9] = dict()
+FT_starting_area_dict[9]['x'] = [1040.5, 1045.2, 1047.4, 1041.6]
+FT_starting_area_dict[9]['y'] = [984.3, 981.2, 984.6, 989.2]
+FT_starting_area_dict[11] = dict()
+FT_starting_area_dict[11]['x'] = [1033, 1038, 1041.3, 1037.1]
+FT_starting_area_dict[11]['y'] = [978, 971, 973, 980]
 
-end_area_dict = dict()
-end_area_dict[2] = dict()
-end_area_dict[2]['x'] = [991.5, 985.4, 985.9, 992.2]
-end_area_dict[2]['y'] = [999, 996.2, 993.7, 995.4]
-end_area_dict[4] = dict()
-end_area_dict[4]['x'] = [1003.5, 1007.1, 1012.2, 1009.6]
-end_area_dict[4]['y'] = [1022.8, 1019.5, 1023.2, 1026.3]
-end_area_dict[6] = dict()
-end_area_dict[6]['x'] = [1035.7, 1040.8, 1044.8, 1040.3]
-end_area_dict[6]['y'] = [1015.4, 1012.3, 1018.1, 1021.9]
-end_area_dict[8] = dict()
-end_area_dict[8]['x'] = [1042, 1043.8, 1049.3, 1048.6]
-end_area_dict[8]['y'] = [1004.8, 1001.5, 1003.4, 1006]
-end_area_dict[10] = dict()
-end_area_dict[10]['x'] = [1041.6, 1049.3, 1051.3, 1043.6]
-end_area_dict[10]['y'] = [978.6, 973.4, 976.5, 981.9]
-end_area_dict[12] = dict()
-end_area_dict[12]['x'] = [1029.2, 1034.4, 1038.6, 1033.2]
-end_area_dict[12]['y'] = [975.4, 967.6, 969.3, 977]
+FT_end_area_dict = dict()
+FT_end_area_dict[2] = dict()
+FT_end_area_dict[2]['x'] = [991.5, 985.4, 985.9, 992.2]
+FT_end_area_dict[2]['y'] = [999, 996.2, 993.7, 995.4]
+FT_end_area_dict[4] = dict()
+FT_end_area_dict[4]['x'] = [1003.5, 1007.1, 1012.2, 1009.6]
+FT_end_area_dict[4]['y'] = [1022.8, 1019.5, 1023.2, 1026.3]
+FT_end_area_dict[6] = dict()
+FT_end_area_dict[6]['x'] = [1035.7, 1040.8, 1044.8, 1040.3]
+FT_end_area_dict[6]['y'] = [1015.4, 1012.3, 1018.1, 1021.9]
+FT_end_area_dict[8] = dict()
+FT_end_area_dict[8]['x'] = [1042, 1043.8, 1049.3, 1048.6]
+FT_end_area_dict[8]['y'] = [1004.8, 1001.5, 1003.4, 1006]
+FT_end_area_dict[10] = dict()
+FT_end_area_dict[10]['x'] = [1041.6, 1049.3, 1051.3, 1043.6]
+FT_end_area_dict[10]['y'] = [978.6, 973.4, 976.5, 981.9]
+FT_end_area_dict[12] = dict()
+FT_end_area_dict[12]['x'] = [1029.2, 1034.4, 1038.6, 1033.2]
+FT_end_area_dict[12]['y'] = [975.4, 967.6, 969.3, 977]
 
 
 def on_press(event):
@@ -64,7 +64,7 @@ def judge_start(track):
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
         motion_state = track.motion_states[ts]
         cur_p = (motion_state.x, motion_state.y)
-        for k, v in starting_area_dict.items():
+        for k, v in FT_starting_area_dict.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
                 return k
@@ -76,7 +76,7 @@ def judge_end(track):
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
         motion_state = track.motion_states[ts]
         cur_p = (motion_state.x, motion_state.y)
-        for k, v in end_area_dict.items():
+        for k, v in FT_end_area_dict.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
                 return k
@@ -140,6 +140,25 @@ def get_track_label(dir_name):
     return csv_dict
 
 
+def plot_start_end_area(ax):
+    for key, v in FT_starting_area_dict.items():
+        x = v['x']
+        y = v['y']
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    for key, v in FT_end_area_dict.items():
+        x = v['x']
+        y = v['y']
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+
+
 def plot_raw_ref_path(map_file, all_points, circle_point):
     fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
     map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
@@ -147,27 +166,13 @@ def plot_raw_ref_path(map_file, all_points, circle_point):
         x = [p[0] for p in way_points]
         y = [p[1] for p in way_points]
         plt.plot(x, y, linewidth=4)
-    for key, v in starting_area_dict.items():
-        x = v['x']
-        y = v['y']
-        plt.text(x[0], y[0], key, fontsize=20)
-        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
-        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
-        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
-        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
-    for key, v in end_area_dict.items():
-        x = v['x']
-        y = v['y']
-        plt.text(x[0], y[0], key, fontsize=20)
-        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
-        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
-        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
-        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+
     for p in circle_point:
         if math.isnan(p[0][0]):
             continue
         circle = patches.Circle(p[0], 1, color='r', zorder=3)
         axes.add_patch(circle)
+    plot_start_end_area(axes)
     fig.canvas.mpl_connect('button_press_event', on_press)
     plt.show()
 
@@ -200,6 +205,7 @@ def plot_ref_path(map_file, ref_path_points):
         xp = [p[0] for p in v]
         yp = [p[1] for p in v]
         plt.plot(xp, yp, linewidth=4)
+    plot_start_end_area(axes)
     plt.show()
 
 

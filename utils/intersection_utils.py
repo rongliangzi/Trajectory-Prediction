@@ -12,14 +12,28 @@ def cal_dis(x, y):
     return dis
 
 
-def find_crossing_point(dis, x, y):
-    pos = np.argmin(dis)
-    xid = pos // y.shape[0]
-    yid = pos % y.shape[0]
-    # the shortest distance is from xid-th point in x to yid-th point in y
-    crossing_point = (x[xid]+y[yid])/2
-    # print('({:.3f},{:.3f})'.format(crossing_point[0], crossing_point[1]))
-    return crossing_point, xid, yid
+def find_crossing_point(dis, x, y, th=0.2):
+    # minimum distance of each row
+    min_dis = dis.min(axis=1)
+    # id of y for minimum distance of each row
+    y_id = np.argmin(dis, axis=1)
+    assert len(min_dis) > 10
+    # try to find a crossing point.
+    # two points before it > th and two points behind it > th
+    # if not found, return None
+    i = 6
+    crossing_points = []
+    cnt = 0
+    while i < len(min_dis) - 6:
+        if min_dis[i - 5] > 2*th and min_dis[i - 6] > 2*th and\
+                min_dis[i + 5] > 2*th and min_dis[i + 6] > 2*th and\
+                min_dis[i] < th:
+            crossing_point = (x[i] + y[y_id[i]]) / 2
+            crossing_points.append((crossing_point, i, y_id[i], 'crossing_'+str(cnt)))
+            cnt += 1
+            i += 50
+        i += 1
+    return crossing_points
 
 
 def find_merging_point(x, y, dis, th=0.8):
@@ -30,28 +44,34 @@ def find_merging_point(x, y, dis, th=0.8):
     assert len(min_dis) > 5
     # try to find a merging point. two points before it > th and two points behind it < th
     # if not found, return None
-    for i in range(2, len(min_dis)-2):
-        if min_dis[i-1] > th > min_dis[i+1] and min_dis[i-2] > th > min_dis[i+2]:
+    i = 10
+    merging_points = []
+    cnt = 0
+    while i < len(min_dis)-10:
+        if min_dis[i-10] > 2*th > 2*min_dis[i+5] and min_dis[i-5] > 1.5*th > 1.5*min_dis[i+10]\
+                and min_dis[i] < th:
             merging_point = (x[i]+y[y_id[i]])/2
-            return merging_point, i, y_id[i]
-        return None
+            merging_points.append((merging_point, i, y_id[i], 'merging_'+str(cnt)))
+            cnt += 1
+            i += 50
+        i += 1
+    return merging_points
 
 
-def find_intersection(seq1, seq2):
-    X1, Y1 = seq1[0], seq1[1]
-    X2, Y2 = seq2[0], seq2[1]
-    x = np.array([[x1, y1] for x1, y1 in zip(X1, Y1)])
-    y = np.array([[x2, y2] for x2, y2 in zip(X2, Y2)])
+def find_intersection(point_x1, point_y1, point_x2, point_y2, dis_th=2, mg_th=0.8):
+    x = np.array([[x1, y1] for x1, y1 in zip(point_x1, point_y1)])
+    y = np.array([[x2, y2] for x2, y2 in zip(point_x2, point_y2)])
     dis = cal_dis(x, y)
     min_dis = dis.min()
 
-    if min_dis > 15:
+    if min_dis > dis_th:
         # no intersection point
         return None
-    intersection = find_merging_point(x, y, dis)
-    # no merging point, find crossing point
-    if intersection is None:
-        intersection, xid, yid = find_crossing_point(dis, x, y)
-    else:
-        intersection, xid, yid = intersection
-    return intersection, xid, yid
+    merging = find_merging_point(x, y, dis, mg_th)
+    intersection = []
+    if len(merging) > 0:
+        intersection += merging
+    crossing = find_crossing_point(dis, x, y)
+    if len(crossing) > 0:
+        intersection += crossing
+    return intersection

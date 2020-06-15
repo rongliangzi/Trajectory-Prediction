@@ -13,6 +13,7 @@ from utils.new_coor_ref_path_utils import judge_in_box
 from utils import dataset_reader
 from utils import dict_utils
 from utils.coordinate_transform import get_frenet
+from utils.intersection_utils import find_merging_point, find_crossing_point, find_intersection
 
 SR_starting_area_dict = dict()
 SR_starting_area_dict[1] = dict()
@@ -93,7 +94,7 @@ def ref_paths2frenet(ref_paths):
     return ref_frenet_coor
 
 
-def get_track_label(dir_name):
+def get_track_label(dir_name, ref_path_points):
     csv_dict = dict()
     # collect data to construct a dict from all csv
     paths = glob.glob(os.path.join(dir_name, '*.csv'))
@@ -130,6 +131,25 @@ def get_track_label(dir_name):
     return csv_dict
 
 
+def plot_start_end_area(ax):
+    for key, v in SR_starting_area_dict.items():
+        x = v['x']
+        y = v['y']
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    for key, v in SR_end_area_dict.items():
+        x = v['x']
+        y = v['y']
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+
+
 def plot_raw_ref_path(map_file, all_points, circle_point):
     fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
     map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
@@ -137,22 +157,7 @@ def plot_raw_ref_path(map_file, all_points, circle_point):
         x = [p[0] for p in way_points]
         y = [p[1] for p in way_points]
         plt.plot(x, y, linewidth=4)
-    for key, v in SR_starting_area_dict.items():
-        x = v['x']
-        y = v['y']
-        plt.text(x[0], y[0], key, fontsize=20)
-        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
-        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
-        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
-        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
-    for key, v in SR_end_area_dict.items():
-        x = v['x']
-        y = v['y']
-        plt.text(x[0], y[0], key, fontsize=20)
-        plt.plot(x[0:2], y[0:2], c='r', zorder=40)
-        plt.plot(x[1:3], y[1:3], c='r', zorder=40)
-        plt.plot(x[2:4], y[2:4], c='r', zorder=40)
-        plt.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    plot_start_end_area(axes)
     for p in circle_point:
         if math.isnan(p[0][0]):
             continue
@@ -191,6 +196,7 @@ def plot_ref_path(map_file, ref_path_points):
         xp = [p[0] for p in v]
         yp = [p[1] for p in v]
         plt.plot(xp, yp, linewidth=4)
+    plot_start_end_area(axes)
     fig.canvas.mpl_connect('button_press_event', on_press)
     plt.show()
 
@@ -223,12 +229,12 @@ def fit_circle(circle_point):
     return cx, cy
 
 
-def nearest_c_point(p, cx, cy):
+def nearest_c_point(p, x_list, y_list):
     min_dis = 1e8
     xn, yn = 0, 0
     min_i = 0
-    for i in range(len(cx)):
-        x, y = cx[i], cy[i]
+    for i in range(len(x_list)):
+        x, y = x_list[i], y_list[i]
         if (x-p[0])**2 + (y-p[1])**2 < min_dis:
             min_dis = (x-p[0])**2 + (y-p[1])**2
             xn, yn = x, y
@@ -240,12 +246,12 @@ def get_ref_path(data, cx, cy):
     ref_path_points = dict()
     para_path = data['para_path'][0]
     circle_merge_point = data['circle_merge_point'][0]
-    branchID = data['branchID'][0]
+    branch_id = data['branchID'][0]
     pre = dict()
     post = dict()
 
-    for i in range(len(branchID)):
-        s = branchID[i][0]
+    for i in range(len(branch_id)):
+        s = branch_id[i][0]
         if s[-1] == -1:
             min_i, _, _ = nearest_c_point(circle_merge_point[i][0], cx, cy)
             d = {'min_i': min_i, 'path': para_path[i]}
@@ -276,26 +282,86 @@ def get_ref_path(data, cx, cy):
     return ref_path_points
 
 
+def find_all_intersections(ref_paths):
+    intersections = dict()
+    path_names = sorted(ref_paths.keys())
+    for path_name in path_names:
+        intersections[path_name] = dict()
+    for i, path1 in enumerate(path_names):
+        for j in range(i+1, len(path_names)):
+            path2 = path_names[j]
+            if path1.split('-')[0] == path2.split('-')[0]:
+                continue
+            path1_x = ref_paths[path1][:, 0]
+            path1_y = ref_paths[path1][:, 1]
+            path2_x = ref_paths[path2][:, 0]
+            path2_y = ref_paths[path2][:, 1]
+            intersection = find_intersection(path1_x, path1_y, path2_x, path2_y,
+                                             dis_th=2, mg_th=0.3)
+            if intersection is not None and len(intersection) > 0:
+                # intersection of path1 and path2 exists
+                intersections[path1][path2] = intersection
+                intersections[path2][path1] = intersection
+    return intersections
+
+
+def plot_intersections(ref_paths, intersections, map_file):
+    keys = sorted(ref_paths.keys())
+    for i, path1 in enumerate(keys):
+        if len(intersections[path1].keys()) == 0:
+            continue
+        for j in range(i+1, len(keys)):
+            path2 = keys[j]
+            if path2 not in intersections[path1].keys():
+                continue
+            fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
+            map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
+            v = ref_paths[path1]
+            xp = [p[0] for p in v]
+            yp = [p[1] for p in v]
+            plt.text(xp[0], yp[0], 'start', fontsize=20)
+            plt.text(xp[-1], yp[-1], 'end', fontsize=20)
+            plt.plot(xp, yp, linewidth=4, label=path1)
+            v = ref_paths[path2]
+            xp = [p[0] for p in v]
+            yp = [p[1] for p in v]
+            plt.text(xp[0], yp[0], 'start', fontsize=20)
+            plt.text(xp[-1], yp[-1], 'end', fontsize=20)
+            plt.plot(xp, yp, linewidth=4, label=path2)
+            m_c = intersections[path1][path2]
+            for k, (p, _, _, cnt) in enumerate(m_c):
+                circle = patches.Circle(p, 0.8, color=(1-k*0.2, 0, 0),
+                                        zorder=3, label=cnt)
+                axes.add_patch(circle)
+            plt.legend(prop={'size': 20})
+            plt.savefig('D:/Dev/UCB task/intersection_figs/'
+                        'roundabout_SR/{}.png'.format(path1+'_'+path2))
+            plt.close()
+
+
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
     map_name = "DR_USA_Roundabout_SR.osm"
     dataFile = 'D:/Dev/UCB task/Segmented_reference_path_DR_USA_Roundabout_SR.mat'
-    data = scio.loadmat(dataFile)
-    para_path = data['Segmented_reference_path']['para_path']
-    circle_merge_point = data['Segmented_reference_path']['circle_merge_point'][0]
-    plot_raw_ref_path(map_dir + map_name, para_path, circle_merge_point)
+    mat_data = scio.loadmat(dataFile)
+    mat_data = mat_data['Segmented_reference_path']
+    all_circle_points = mat_data['circle_merge_point'][0]
+    # plot_raw_ref_path(map_dir + map_name, mat_data['para_path'], circle_merge_point)
 
-    cx, cy = fit_circle(circle_merge_point)
+    circle_x, circle_y = fit_circle(all_circle_points)
     # a dict, call by path return an array(x,2)
-    ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
+    SR_ref_path_points = get_ref_path(mat_data, circle_x, circle_y)
 
+    SR_intersections = find_all_intersections(SR_ref_path_points)
+    plot_intersections(SR_ref_path_points, SR_intersections, map_dir + map_name)
     # plot_ref_path_divided(map_dir + map_name, ref_path_points)
-    # plot_ref_path(map_dir + map_name, ref_path_points)
+    # plot_ref_path(map_dir + map_name, SR_ref_path_points)
 
-    # a dict, call by path return an array(x,1): frenet of ref path points
-    ref_point_frenet = ref_paths2frenet(ref_path_points)
-    csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/')
-    pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
-    pickle.dump(csv_data, pickle_file)
-    pickle_file.close()
+    # # a dict, call by path return an array(x,1): frenet of ref path points
+    # ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
+    # csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
+    #                            SR_ref_path_points)
+    # pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
+    # pickle.dump(csv_data, pickle_file)
+    # pickle_file.close()
 
