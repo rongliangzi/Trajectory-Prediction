@@ -62,7 +62,7 @@ def find_all_intersections(ref_paths):
     for path_name in path_names:
         intersections[path_name] = dict()
     for i, path1 in enumerate(path_names):
-        for j in range(i+1, len(path_names)):
+        for j in range(len(path_names)):
             path2 = path_names[j]
             if path1.split('-')[0] == path2.split('-')[0]:
                 continue
@@ -75,7 +75,6 @@ def find_all_intersections(ref_paths):
             if intersection is not None and len(intersection) > 0:
                 # intersection of path1 and path2 exists
                 intersections[path1][path2] = intersection
-                intersections[path2][path1] = intersection
     return intersections
 
 
@@ -170,7 +169,7 @@ def rotate_crop_intersection_fig(ref_paths, path1, path2, theta, p, save_dir,
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-    plt.savefig(save_dir + '{}_{}_{}_{}.png'.format(path1, path2, str(k), theta))
+    plt.savefig(save_dir + '{}_{}_{}_{}.png'.format(path1, path2, str(k), n))
     plt.close()
 
 
@@ -191,7 +190,8 @@ def crop_intersection_figs(ref_paths, intersections, ref_frenet, save_dir, rotat
 
                 for r_n in range(rotate_n):
                     theta = random.random() * 2 * math.pi
-                    rotate_crop_intersection_fig(ref_paths, path1, path2, theta, p, save_dir, k, fid, sid, ref_frenet, r_n+1)
+                    rotate_crop_intersection_fig(ref_paths, path1, path2, theta, p,
+                                                 save_dir, k, fid, sid, ref_frenet, r_n+1)
                 count += 1+rotate_n
                 print(count)
     return
@@ -301,7 +301,7 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
-                print(0)
+                print(agent.track_id, 0)
                 continue
             path_name = str(start_area) + '-' + str(end_area)
             if path_name not in ref_path_points:
@@ -326,16 +326,20 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
 def get_70_coor(track_data, start_ts):
     coors = []
     for coor_ts in range(start_ts, start_ts+70*100, 100):
-        coor_ms = track_data.motion_states[coor_ts]
-        coors.append((coor_ms.x, coor_ms.y))
+        if coor_ts in track_data.motion_states.keys():
+            coor_ms = track_data.motion_states[coor_ts]
+            coors.append((coor_ms.x, coor_ms.y))
+        else:
+            coors.append('NaN')
     return coors
 
 
 def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
     all_edges = dict()
-    for i, c_data in enumerate(csv_dict):
+    for i, c_data in csv_dict.items():
+        print(i)
         edges = dict()
-        for ego_id, ego_data in c_data:
+        for ego_id, ego_data in c_data.items():
             ego_track = ego_data['data']
             ego_path = ego_data['ref path']
             # if in starting area and have at least 69 frames behind,
@@ -343,8 +347,9 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
             for start_ts in range(ego_track.time_stamp_ms_first,
                                   ego_track.time_stamp_ms_last - 68 * 100, 100):
                 ego_start_ms = ego_track.motion_states[start_ts]
-                sx = starting_areas[ego_path]['x']
-                sy = starting_areas[ego_path]['y']
+                start_id = int(ego_path.split('-')[0])
+                sx = starting_areas[start_id]['x']
+                sy = starting_areas[start_id]['y']
                 in_starting_area = judge_in_box(sx, sy, (ego_start_ms.x, ego_start_ms.y))
                 if in_starting_area == 0:
                     continue
@@ -353,82 +358,76 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
                 edges[ego_id][start_ts] = dict()
                 ts_20 = start_ts + 19 * 100
                 ego_20_ms = ego_track.motion_states[ts_20]
-                ego_20_s = ego_20_ms.frenet_s
-                ego_20_x = ego_20_ms.x
-                ego_20_y = ego_20_ms.y
 
-                # save x,y coordinate
+                # save x,y coordinate of all involved agents in 70 frames
                 edges[ego_id][start_ts]['coordinate'] = dict()
+                # id of involved agents in 20th frame
                 edges[ego_id][start_ts]['agents'] = [ego_id]
+                # intersections involved in 20th frame
                 edges[ego_id][start_ts]['task'] = []
                 edges[ego_id][start_ts]['coordinate'][ego_id] = get_70_coor(ego_track, start_ts)
 
-                for other_id, other_data in c_data:
+                for other_id, other_data in c_data.items():
                     other_track = other_data['data']
                     other_path = other_data['ref path']
                     # not self, and containing this timestamp
-                    if other_id.track_id == ego_id or ts_20 not in other_track.motion_states.keys():
+                    if other_id == ego_id or ts_20 not in other_track.motion_states.keys():
                         continue
-                    other_x = other_track.motion_states[ts_20].x
-                    other_y = other_track.motion_states[ts_20].y
+                    other_20_x = other_track.motion_states[ts_20].x
+                    other_20_y = other_track.motion_states[ts_20].y
                     # delta of x,y in (-10, 10)
-                    if abs(other_x - ego_20_ms.x) > 10 or abs(other_y - ego_20_ms.y) > 10:
+                    if abs(other_20_x - ego_20_ms.x) > 10 or abs(other_20_y - ego_20_ms.y) > 10:
                         continue
-                    other_s = other_track.motion_states[ts_20].frenet_s
                     # have intersection
-                    if other_path in is_info[ego_path]:
-                        intersections = is_info[ego_path][other_path]
-                        closest_its = None
-                        closest_dis = 1e8
-                        # find the closest intersection
-                        for its in intersections:
-                            p, _, _ = its
-                            dis = (p[0]-ego_20_x)**2+(p[1]-ego_20_y)**2
-                            if dis < closest_dis:
-                                closest_dis = dis
-                                closest_its = its
-                        its_s1 = ref_frenet[ego_path][closest_its[1]]
-                        its_s2 = ref_frenet[other_path][closest_its[2]]
-                        if ego_20_s > its_s1 or other_s > its_s2:
-                            continue
-                        # s to intersection
-                        ego_s2its = its_s1 - ego_20_s
-                        other_s2its = its_s2 - other_s
-                        edges[ego_id][start_ts][other_id] = (ego_s2its, other_s2its)
+                    if other_path in is_info[ego_path].keys():
                         edges[ego_id][start_ts]['agents'].append(other_id)
                         edges[ego_id][start_ts]['coordinate'][other_id] = get_70_coor(other_track, start_ts)
                         pair = sorted([ego_path, other_path])
                         edges[ego_id][start_ts]['task'].append((pair[0], pair[1]))
                     # in the same ref path and ego behind other
+
                     if other_path == ego_path and ego_track.motion_states[ts_20].frenet_s < \
                             other_track.motion_states[ts_20].frenet_s:
-                        delta_s = other_s - ego_20_s
-                        edges[ego_id][start_ts][other_id] = (delta_s,)
                         edges[ego_id][start_ts]['agents'].append(other_id)
                         edges[ego_id][start_ts]['coordinate'][other_id] = get_70_coor(other_track, start_ts)
                 # delete no surrounding car cases
                 if len(edges[ego_id][start_ts]['agents']) < 2:
                     del edges[ego_id][start_ts]
-                for ts in range(start_ts, start_ts+70*100, 100):
-                    ego_cur_ms = ego_track.motion_states[ts]
-                    edges[ego_id][start_ts][ts] = dict()
+                    continue
+                for cur_ts in range(start_ts, start_ts + 70 * 100, 100):
+                    ego_cur_ms = ego_track.motion_states[cur_ts]
+                    edges[ego_id][start_ts][cur_ts] = dict()
                     theta = math.pi/2 - ego_cur_ms.psi_rad
                     for other_id in edges[ego_id][start_ts]['agents'][1:]:
-                        other_cur_ms = c_data[other_id]['data'].motion_states[ts]
+                        if cur_ts not in c_data[other_id]['data'].motion_states.keys():
+                            continue
+                        other_cur_ms = c_data[other_id]['data'].motion_states[cur_ts]
                         other_path = c_data[other_id]['ref path']
                         rot_x, rot_y = counterclockwise_rotate(other_cur_ms.x, other_cur_ms.y,
-                                                               (ego_cur_ms.x, ego_cur_ms), theta)
-                        edge_info = [(rot_x, rot_y)]
+                                                               (ego_cur_ms.x, ego_cur_ms.y), theta)
+                        edge_info = [(rot_x-ego_cur_ms.x, rot_y-ego_cur_ms.y)]
+                        # the same path
                         if other_path == ego_path:
                             delta_s = other_cur_ms.frenet_s - ego_cur_ms.frenet_s
                             edge_info.append(delta_s)
+                        # intersection
                         else:
-                            p, first_id, second_id = is_info[ego_path][other_path]
+                            intersections = is_info[ego_path][other_path]
+                            closest_its = None
+                            closest_dis = 1e8
+                            # find the closest intersection
+                            for its in intersections:
+                                p, _, _, _ = its
+                                dis = (p[0] - ego_cur_ms.x) ** 2 + (p[1] - ego_cur_ms.y) ** 2
+                                if dis < closest_dis:
+                                    closest_dis = dis
+                                    closest_its = its
+                            _, first_id, second_id, _ = closest_its
                             its_s1 = ref_frenet[ego_path][first_id]
                             its_s2 = ref_frenet[other_path][second_id]
                             s_ego = its_s1 - ego_cur_ms.frenet_s
                             s_other = its_s2 - other_cur_ms.frenet_s
                             edge_info += [s_ego, s_other]
-                        edges[ego_id][start_ts][ts][other_id] = edge_info
+                        edges[ego_id][start_ts][cur_ts][other_id] = edge_info
         all_edges[i] = edges
     return all_edges
