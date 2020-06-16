@@ -13,14 +13,18 @@ class MotionState:
         self.vx = None
         self.vy = None
         self.psi_rad = None
+        # velocity along s direction in frenet
+        self.vs = None
+        self.frenet_s = None
+        self.frenet_d = None
 
     def __str__(self):
         return "MotionState: " + str(self.__dict__)
 
 
 class Track:
-    def __init__(self, id):
-        assert isinstance(id, int)
+    def __init__(self, t_id):
+        assert isinstance(t_id, int)
         self.track_id = id
         self.agent_type = None
         self.length = None

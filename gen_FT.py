@@ -13,6 +13,7 @@ from utils.new_coor_ref_path_utils import judge_in_box
 from utils import dataset_reader
 from utils import dict_utils
 from utils.coordinate_transform import get_frenet
+from utils.roundabout_utils import *
 
 FT_starting_area_dict = dict()
 FT_starting_area_dict[1] = dict()
@@ -53,91 +54,6 @@ FT_end_area_dict[10]['y'] = [978.6, 973.4, 976.5, 981.9]
 FT_end_area_dict[12] = dict()
 FT_end_area_dict[12]['x'] = [1029.2, 1034.4, 1038.6, 1033.2]
 FT_end_area_dict[12]['y'] = [975.4, 967.6, 969.3, 977]
-
-
-def on_press(event):
-    print("my position:", event.button, event.xdata, event.ydata)
-
-
-def judge_start(track):
-    # judge if in some starting area frame by frame
-    for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
-        motion_state = track.motion_states[ts]
-        cur_p = (motion_state.x, motion_state.y)
-        for k, v in FT_starting_area_dict.items():
-            in_box = judge_in_box(v['x'], v['y'], cur_p)
-            if in_box == 1:
-                return k
-    return 0
-
-
-def judge_end(track):
-    # judge if in some starting area frame by frame
-    for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
-        motion_state = track.motion_states[ts]
-        cur_p = (motion_state.x, motion_state.y)
-        for k, v in FT_end_area_dict.items():
-            in_box = judge_in_box(v['x'], v['y'], cur_p)
-            if in_box == 1:
-                return k
-    return 0
-
-
-# transform points in a ref path to frenet coordinate
-def ref_point2frenet(x_points, y_points):
-    frenet_s_points = [0]
-    for i in range(1, len(x_points)):
-        prev_x = x_points[i-1]
-        prev_y = y_points[i-1]
-        x = x_points[i]
-        y = y_points[i]
-        s_dis = ((x-prev_x)**2+(y-prev_y)**2)**0.5
-        frenet_s_points.append(frenet_s_points[i-1]+s_dis)
-    frenet_s_points = np.array(frenet_s_points)
-    return frenet_s_points
-
-
-def ref_path2frenet(ref_paths):
-    ref_frenet = dict()
-    for path_name, path_points in ref_paths.items():
-        frenet_s_points = ref_point2frenet(path_points[:, 0], path_points[:, 1])
-        ref_frenet[path_name] = frenet_s_points
-    return ref_frenet
-
-
-def get_track_label(dir_name):
-    csv_dict = dict()
-    # collect data to construct a dict from all csv
-    paths = glob.glob(os.path.join(dir_name, '*.csv'))
-    paths.sort()
-    for csv_name in paths:
-        print(csv_name)
-        track_dictionary = dataset_reader.read_tracks(csv_name)
-        tracks = dict_utils.get_value_list(track_dictionary)
-        agent_path = dict()
-        for agent in tracks:
-            # # transform the coordinate
-            # for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last+100, 100):
-            #     agent.motion_states[ts].x = (agent.motion_states[ts].x - x_s) * rate
-            #     agent.motion_states[ts].y = (agent.motion_states[ts].y - y_s) * rate
-            start_area = judge_start(agent)
-            end_area = judge_end(agent)
-            if start_area == 0 or end_area == 0:
-                continue
-            k = str(start_area) + '-' + str(end_area)
-            if k not in ref_path_points:
-                k = str(start_area) + '--1-' + str(end_area)
-            xy_points = ref_path_points[k]
-            frenet = []
-            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
-                x = agent.motion_states[ts].x
-                y = agent.motion_states[ts].y
-                psi_rad = agent.motion_states[ts].psi_rad
-                frenet_s, _ = get_frenet(x, y, psi_rad, xy_points, ref_point_frenet[k])
-                frenet.append(frenet_s)
-            agent_path[agent.track_id] = {'data': agent, 'ref path': k, 'frenet': frenet}
-        csv_dict[csv_name[-7:-4]] = agent_path
-    return csv_dict
 
 
 def plot_start_end_area(ax):
@@ -209,87 +125,6 @@ def plot_ref_path(map_file, ref_path_points):
     plt.show()
 
 
-def residuals(p, x, y):
-    a, b, r = p
-    return r**2 - (y - b) ** 2 - (x - a) ** 2
-
-
-def fit_circle(circle_point):
-    circle_x = []
-    circle_y = []
-    for p in circle_point:
-        if math.isnan(p[0][0]):
-            continue
-        circle_x.append(p[0][0])
-        circle_y.append(p[0][1])
-    x = np.array(circle_x)
-    y = np.array(circle_y)
-    result = leastsq(residuals, np.array([1, 1, 1]), args=(x, y))
-    a, b, r = result[0]
-    r = max(-r, r)
-    print("a=", a, "b=", b, "r=", r)
-    cx = [a-r]
-    cy = [b]
-    for i in range(359):
-        nx, ny = counterclockwise_rotate(a-r, b, (a, b), (i+1)*math.pi/180)
-        cx.append(nx)
-        cy.append(ny)
-    return cx, cy
-
-
-def nearest_c_point(p, cx, cy):
-    min_dis = 1e8
-    xn, yn = 0, 0
-    min_i = 0
-    for i in range(len(cx)):
-        x, y = cx[i], cy[i]
-        if (x-p[0])**2 + (y-p[1])**2 < min_dis:
-            min_dis = (x-p[0])**2 + (y-p[1])**2
-            xn, yn = x, y
-            min_i = i
-    return min_i, xn, yn
-
-
-def get_ref_path(data, cx, cy):
-    ref_path_points = dict()
-    para_path = data['para_path'][0]
-    circle_merge_point = data['circle_merge_point'][0]
-    branchID = data['branchID'][0]
-    pre = dict()
-    post = dict()
-
-    for i in range(len(branchID)):
-        s = branchID[i][0]
-        if s[-1] == -1:
-            min_i, _, _ = nearest_c_point(circle_merge_point[i][0], cx, cy)
-            d = {'min_i': min_i, 'path': para_path[i]}
-            pre[str(s[0])] = d
-        elif s[0] == -1:
-            min_i, _, _ = nearest_c_point(circle_merge_point[i][0], cx, cy)
-            d = {'min_i': min_i, 'path': para_path[i]}
-            post[str(s[1])] = d
-        else:
-            label = str(s[0]) + '-' + str(s[1])
-            ref_path_points[label] = para_path[i]
-
-    for k1, v1 in pre.items():
-        for k2, v2 in post.items():
-            if k1+'-'+k2 in ref_path_points.keys():
-                continue
-            label = k1+'--1-'+k2
-            i1 = v1['min_i']
-            i2 = v2['min_i']
-            if i2 > i1:
-                cpx = cx[i1:i2+1]
-                cpy = cy[i1:i2+1]
-            else:
-                cpx = cx[i1:] + cx[:i2+1]
-                cpy = cy[i1:] + cy[:i2+1]
-            cp = np.array([[x, y] for x, y in zip(cpx, cpy)])
-            ref_path_points[label] = np.vstack((v1['path'], cp, v2['path']))
-    return ref_path_points
-
-
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
     map_name = "DR_USA_Roundabout_FT.osm"
@@ -301,14 +136,20 @@ if __name__ == '__main__':
 
     cx, cy = fit_circle(circle_merge_point)
     # a dict, call by path return an array(x,2)
-    ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
+    FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
 
     # plot_ref_path_divided(map_dir + map_name, ref_path_points)
-    plot_ref_path(map_dir + map_name, ref_path_points)
+    # plot_ref_path(map_dir + map_name, FT_ref_path_points)
+    FT_intersections = find_all_intersections(FT_ref_path_points)
+    # save_intersection_bg_figs(FT_ref_path_points, FT_intersections, map_dir+map_name,
+    #                           'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    # a dict, call by path return an array(x,1): frenet of ref path points
+    ref_point_frenet = ref_paths2frenet(FT_ref_path_points)
+    crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
+                           'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/')
 
-    # # a dict, call by path return an array(x,1): frenet of ref path points
-    # ref_point_frenet = ref_path2frenet(ref_path_points)
-    # csv_dict = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/')
+    # csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
+    #                            FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
     # pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'wb')
-    # pickle.dump(csv_dict, pickle_file)
+    # pickle.dump(csv_data, pickle_file)
     # pickle_file.close()
