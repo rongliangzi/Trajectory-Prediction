@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from utils import map_vis_without_lanelet
 from align_ref_img import counterclockwise_rotate
-from utils.intersection_utils import find_intersection
+from utils.intersection_utils import find_intersection, find_split_point
 from utils import dataset_reader
 from utils import dict_utils
 from utils.new_coor_ref_path_utils import judge_in_box
@@ -54,6 +54,25 @@ def nearest_c_point(p, x_list, y_list):
             xn, yn = x, y
             min_i = i
     return min_i, xn, yn
+
+
+def find_all_split_points(ref_paths):
+    split_points = dict()
+    path_names = sorted(ref_paths.keys())
+    for path_name in path_names:
+        split_points[path_name] = dict()
+    for i, path1 in enumerate(path_names):
+        start_area1 = path1.split('-')[0]
+        for j in range(len(path_names)):
+            path2 = path_names[j]
+            start_area2 = path2.split('-')[0]
+            # having the same starting area
+            if start_area1 != start_area2:
+                continue
+            split_point = find_split_point(ref_paths[path1], ref_paths[path2])
+            if split_point is not None:
+                split_points[path1][path2] = split_point
+    return split_points
 
 
 def find_all_intersections(ref_paths):
@@ -334,7 +353,7 @@ def get_70_coor(track_data, start_ts):
     return coors
 
 
-def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
+def save_edges(csv_dict, is_info, ref_frenet, starting_areas, split_points):
     all_edges = dict()
     for i, c_data in csv_dict.items():
         print(i)
@@ -385,11 +404,22 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
                         pair = sorted([ego_path, other_path])
                         edges[ego_id][start_ts]['task'].append((pair[0], pair[1]))
                     # in the same ref path and ego behind other
-
-                    if other_path == ego_path and ego_track.motion_states[ts_20].frenet_s < \
+                    elif other_path == ego_path and ego_track.motion_states[ts_20].frenet_s < \
                             other_track.motion_states[ts_20].frenet_s:
                         edges[ego_id][start_ts]['agents'].append(other_id)
                         edges[ego_id][start_ts]['coordinate'][other_id] = get_70_coor(other_track, start_ts)
+                    # having the same starting area
+                    elif other_path.split('-')[0] == ego_path.split('-')[0]:
+                        sp_point = split_points[ego_path][other_path]
+                        if sp_point is not None:
+                            sp_id1 = sp_point[1]
+                            sp_id2 = sp_point[2]
+                            sp_s1 = ref_frenet[ego_path][sp_id1]
+                            sp_s2 = ref_frenet[other_path][sp_id2]
+                            # having not arrived the split point
+                            if sp_s1 > ego_track.motion_states[ts_20].frenet_s\
+                                    or sp_s2 > other_track.motion_states[ts_20].frenet_s:
+                                pass
                 # delete no surrounding car cases
                 if len(edges[ego_id][start_ts]['agents']) < 2:
                     del edges[ego_id][start_ts]
@@ -429,5 +459,7 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas):
                             s_other = its_s2 - other_cur_ms.frenet_s
                             edge_info += [s_ego, s_other]
                         edges[ego_id][start_ts][cur_ts][other_id] = edge_info
+            if ego_id in edges.keys() and len(edges[ego_id]) == 0:
+                del edges[ego_id]
         all_edges[i] = edges
     return all_edges
