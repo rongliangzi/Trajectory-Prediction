@@ -146,28 +146,31 @@ if __name__ == '__main__':
     #                           'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(FT_ref_path_points)
-    # crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
-    #                        'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/')
-    if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'rb')
-        csv_data = pickle.load(pickle_file)
-        pickle_file.close()
-    else:
-        csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
-                                   FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
-        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'wb')
-        pickle.dump(csv_data, pickle_file)
-        pickle_file.close()
-    edge_keys = sorted(csv_data.keys())
-    s = 4
-    for k in range(s):
-        start = k*len(edge_keys)//s
-        end = min((k+1)*len(edge_keys)//s, len(edge_keys))
-        split_data = dict()
-        for ek in range(start, end):
-            split_data[edge_keys[ek]] = csv_data[edge_keys[ek]]
-        split_edges = save_edges(split_data, FT_intersections, ref_point_frenet,
-                                 FT_starting_area_dict, FT_split_points)
-        pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    rotate_n = 49
+    crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
+                           'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    crop_split_figs(FT_ref_path_points, FT_split_points, ref_point_frenet,
+                    'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl'):
+    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'rb')
+    #     csv_data = pickle.load(pickle_file)
+    #     pickle_file.close()
+    # else:
+    #     csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
+    #                                FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'wb')
+    #     pickle.dump(csv_data, pickle_file)
+    #     pickle_file.close()
+    # edge_keys = sorted(csv_data.keys())
+    # s = 4
+    # for k in range(s):
+    #     start = k*len(edge_keys)//s
+    #     end = min((k+1)*len(edge_keys)//s, len(edge_keys))
+    #     split_data = dict()
+    #     for ek in range(start, end):
+    #         split_data[edge_keys[ek]] = csv_data[edge_keys[ek]]
+    #     split_edges = save_edges(split_data, FT_intersections, ref_point_frenet,
+    #                              FT_starting_area_dict, FT_split_points)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

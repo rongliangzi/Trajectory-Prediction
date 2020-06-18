@@ -123,7 +123,7 @@ def plot_aligned_img(x1, y1, w1, x2, y2, w2, fig_name, intersection, id1, id2,
     plt.xlim(intersection[0]-r//2, intersection[0]+r//2)
     plt.ylim(intersection[1]-r//2, intersection[1]+r//2)
 
-    # remove the white biankuang
+    # remove the white frame
     plt.gca().xaxis.set_major_locator(plt.NullLocator())
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)

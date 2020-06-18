@@ -63,8 +63,9 @@ def find_all_split_points(ref_paths):
         split_points[path_name] = dict()
     for i, path1 in enumerate(path_names):
         start_area1 = path1.split('-')[0]
-        for j in range(len(path_names)):
-            path2 = path_names[j]
+        for path2 in path_names:
+            if path1 == path2:
+                continue
             start_area2 = path2.split('-')[0]
             # having the same starting area
             if start_area1 != start_area2:
@@ -133,66 +134,197 @@ def save_intersection_bg_figs(ref_paths, intersections, map_file, save_dir):
             plt.close()
 
 
-def rotate_crop_intersection_fig(ref_paths, path1, path2, theta, p, save_dir,
-                                 k, first_id, second_id, ref_frenet, n):
+def ref_path_completion(xp, yp, up, bottom, left, right, mode):
+    if mode == 'start':
+        x2, x1 = xp[0:2]
+        y2, y1 = yp[0:2]
+    else:
+        x1, x2 = xp[-2:]
+        y1, y2 = yp[-2:]
+    k = (y2 - y1) / (x2 - x1)
+    b = (x2 * y1 - x1 * y2) / (x2 - x1)
+    if x1 > x2:
+        x = x2 - 0.2
+        while x > left:
+            y = k * x + b
+            if y > up or y < bottom:
+                break
+            if mode == 'start':
+                xp = [x] + xp
+                yp = [y] + yp
+            else:
+                xp = xp + [x]
+                yp = yp + [y]
+            x -= 0.2
+        y = k * x + b
+        if mode == 'start':
+            xp = [x] + xp
+            yp = [y] + yp
+        else:
+            xp = xp + [x]
+            yp = yp + [y]
+    else:
+        x = x2 + 0.2
+        while x < right:
+            y = k * x + b
+            if y > up or y < bottom:
+                break
+            if mode == 'start':
+                xp = [x] + xp
+                yp = [y] + yp
+            else:
+                xp = xp + [x]
+                yp = yp + [y]
+            x += 0.2
+        y = k * x + b
+        if mode == 'start':
+            xp = [x] + xp
+            yp = [y] + yp
+        else:
+            xp = xp + [x]
+            yp = yp + [y]
+    return xp, yp
+
+
+def get_append(xp1, yp1, xps2, yps2, mode):
+    # find the closest point of xp1, yp1 in xps2, yps2
+    # and return the pre or post sequence to append with original sequence
+    min_dis = 1e8
+    closest_id = 0
+    for dis_i, (x2, y2) in enumerate(zip(xps2, yps2)):
+        dis = (x2 - xp1) ** 2 + (y2 - yp1) ** 2
+        if dis < min_dis:
+            closest_id = dis_i
+            min_dis = dis
+    if mode == 'end':
+        append_x = [x for x in xps2[closest_id:]]
+        append_y = [y for y in yps2[closest_id:]]
+    else:
+        append_x = [x for x in xps2[:closest_id]]
+        append_y = [y for y in yps2[:closest_id]]
+    return append_x, append_y
+
+
+def rotate_crop_2path_fig(ref_paths, path1, path2, theta, path_info, save_dir,
+                          k, ref_frenet, n):
+    p, first_id, second_id, label = path_info
     d = 4  # fig size
     r = 20  # range of x and y
     dpi = 50
     fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
     # set bg to black
     axes.patch.set_facecolor("k")
-    v = ref_paths[path1]
-    frenet = ref_frenet[path1]
-    si = frenet[first_id]
-    start = 0
-    for i, s in enumerate(frenet):
-        if s < si-20:
-            start = i
-    end = len(v)
-    for i in range(len(frenet)-1, -1, -1):
-        s = frenet[i]
-        if s > si+20:
-            end = i
-    xp = [p[0] for p in v[start:end]]
-    yp = [p[1] for p in v[start:end]]
+    v1 = ref_paths[path1]
+    frenet1 = ref_frenet[path1]
+    si1 = frenet1[first_id]
+    start1 = 0
+    for i, s in enumerate(frenet1):
+        if s < si1-20:
+            start1 = i
+    end1 = len(v1)
+    for i in range(len(frenet1)-1, -1, -1):
+        s = frenet1[i]
+        if s > si1+20:
+            end1 = i
+    xp1 = [p[0] for p in v1[start1:end1]]
+    yp1 = [p[1] for p in v1[start1:end1]]
+
+    lw = 2*72*d/r
+    v2 = ref_paths[path2]
+    frenet2 = ref_frenet[path2]
+    si2 = frenet2[second_id]
+    start2 = 0
+    for i, s in enumerate(frenet2):
+        if s < si2 - 20:
+            start2 = i
+    end2 = len(v2)
+    for i in range(len(frenet2)-1, -1, -1):
+        s = frenet2[i]
+        if s > si2 + 20:
+            end2 = i
+    xp2 = [p[0] for p in v2[start2:end2]]
+    yp2 = [p[1] for p in v2[start2:end2]]
+
+    # complete end part
+    if abs(xp2[-1]-p[0]) < 10 and abs(yp2[-1]-p[1]) < 10:
+        # merging and the other is longer
+        end1_out = abs(xp1[-1]-p[0]) > 10 or abs(yp1[-1]-p[1]) > 10
+        if 'merging' in label and end1_out:
+            append_x, append_y = get_append(xp2[-1], yp2[-1], xp1, yp1, 'end')
+            xp2 = xp2 + append_x
+            yp2 = yp2 + append_y
+        # complete along the tangle
+        else:
+            xp2, yp2 = ref_path_completion(xp2, yp2, p[1] + r // 2, p[1] - r // 2,
+                                           p[0] - r // 2, p[0] + r // 2, 'end')
+    if abs(xp1[-1]-p[0]) < 10 and abs(yp1[-1]-p[1]) < 10:
+        # merging and the other is longer
+        end2_out = abs(xp2[-1] - p[0]) > 10 or abs(yp2[-1] - p[1]) > 10
+        if 'merging' in label and end2_out:
+            append_x, append_y = get_append(xp1[-1], yp1[-1], xp2, yp2, 'end')
+            xp1 = xp1 + append_x
+            yp1 = yp1 + append_y
+        # complete along the tangle
+        else:
+            xp1, yp1 = ref_path_completion(xp1, yp1, p[1] + r // 2, p[1] - r // 2,
+                                           p[0] - r // 2, p[0] + r // 2, 'end')
+    # complete start part
+    if abs(xp2[0]-p[0]) < 10 and abs(yp2[0]-p[1]) < 10:
+        # split and the other is longer
+        start1_out = abs(xp1[0] - p[0]) > 10 or abs(yp1[0] - p[1]) > 10
+        if 'split' in label and start1_out:
+            append_x, append_y = get_append(xp2[0], yp2[0], xp1, yp1, 'start')
+            xp2 = append_x + xp2
+            yp2 = append_y + yp2
+        # complete along the tangle
+        else:
+            xp2, yp2 = ref_path_completion(xp2, yp2, p[1] + r // 2, p[1] - r // 2,
+                                           p[0] - r // 2, p[0] + r // 2, 'start')
+    if abs(xp1[0]-p[0]) < 10 and abs(yp1[0]-p[1]) < 10:
+        # split and the other is longer
+        start2_out = abs(xp2[0] - p[0]) > 10 or abs(yp2[0] - p[1]) > 10
+        if 'split' in label and start2_out:
+            append_x, append_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
+            xp1 = append_x + xp1
+            yp1 = append_y + yp1
+        # complete along the tangle
+        else:
+            xp1, yp1 = ref_path_completion(xp1, yp1, p[1] + r // 2, p[1] - r // 2,
+                                           p[0] - r // 2, p[0] + r // 2, 'start')
     # rotate
-    xp, yp = counterclockwise_rotate(xp, yp, p, theta)
-    plt.plot(xp, yp, linewidth=8, color='b')
-    v = ref_paths[path2]
-    frenet = ref_frenet[path2]
-    si = frenet[second_id]
-    start = 0
-    for i, s in enumerate(frenet):
-        if s < si - 20:
-            start = i
-    end = len(v)
-    for i in range(len(frenet)-1, -1, -1):
-        s = frenet[i]
-        if s > si + 20:
-            end = i
-    xp = [p[0] for p in v[start:end]]
-    yp = [p[1] for p in v[start:end]]
-    # rotate
-    xp, yp = counterclockwise_rotate(xp, yp, p, theta)
-    plt.plot(xp, yp, linewidth=8, color='g')
-    circle = patches.Circle(p, 0.6, color='r', zorder=3)
-    axes.add_patch(circle)
+    xp1, yp1 = counterclockwise_rotate(xp1, yp1, p, theta)
+    xp2, yp2 = counterclockwise_rotate(xp2, yp2, p, theta)
+    if 'cross' in label:
+        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0, 0, 1))
+        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(1, 0, 1), zorder=5)
+        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0, 1, 1))
+        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(1, 1, 1), zorder=5)
+    elif 'merging' in label:
+        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0, 0, 1))
+        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(1, 0, 1), zorder=5)
+        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0.5, 1, 1))
+        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(0.5, 1, 1), zorder=5)
+    elif 'split' in label:
+        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0, 1, 1))
+        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(1, 1, 1), zorder=5)
+        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0.5, 0, 1))
+        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(0.5, 0, 1), zorder=5)
     # set x y range
     plt.xlim(p[0] - r // 2, p[0] + r // 2)
     plt.ylim(p[1] - r // 2, p[1] + r // 2)
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
         print('make dir: ', save_dir)
-    # remove the white biankuang
+    # remove the white frame
     plt.gca().xaxis.set_major_locator(plt.NullLocator())
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-    plt.savefig(save_dir + '{}_{}_{}_{}.png'.format(path1, path2, str(k), n))
+    plt.savefig(save_dir + '{}_{}_{}_{}.png'.format(path1, path2, k, n))
     plt.close()
 
 
-def crop_intersection_figs(ref_paths, intersections, ref_frenet, save_dir, rotate_n=49):
+def crop_intersection_figs(ref_paths, intersections, ref_frenet, save_dir, rotate_n):
     keys = sorted(ref_paths.keys())
     random.seed(123)
     count = 0
@@ -203,16 +335,42 @@ def crop_intersection_figs(ref_paths, intersections, ref_frenet, save_dir, rotat
             path2 = keys[j]
             if path2 not in intersections[path1].keys():
                 continue
-            m_c = intersections[path1][path2]
-            for k, (p, fid, sid, cnt) in enumerate(m_c):
-                rotate_crop_intersection_fig(ref_paths, path1, path2, 0.0, p, save_dir, k, fid, sid, ref_frenet, 0)
 
+            m_c = intersections[path1][path2]
+            for k, its_info in enumerate(m_c):
+                print(path1, path2)
+                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
+                                      save_dir, k, ref_frenet, 0)
                 for r_n in range(rotate_n):
                     theta = random.random() * 2 * math.pi
-                    rotate_crop_intersection_fig(ref_paths, path1, path2, theta, p,
-                                                 save_dir, k, fid, sid, ref_frenet, r_n+1)
+                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
+                                          save_dir, k, ref_frenet, r_n+1)
                 count += 1+rotate_n
                 print(count)
+    return
+
+
+def crop_split_figs(ref_paths, split_points, ref_frenet, save_dir, rotate_n):
+    keys = sorted(ref_paths.keys())
+    random.seed(123)
+    count = 0
+    for i, path1 in enumerate(keys):
+        if len(split_points[path1].keys()) == 0:
+            continue
+        for j in range(i + 1, len(keys)):
+            path2 = keys[j]
+            if path2 not in split_points[path1].keys():
+                continue
+            its_info = split_points[path1][path2]
+            rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
+                                  save_dir, 0, ref_frenet, 0)
+
+            for r_n in range(rotate_n):
+                theta = random.random() * 2 * math.pi
+                rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
+                                      save_dir, 0, ref_frenet, r_n + 1)
+            count += 1 + rotate_n
+            print(count)
     return
 
 

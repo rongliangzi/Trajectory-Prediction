@@ -127,26 +127,29 @@ if __name__ == '__main__':
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
     SR_intersections = find_all_intersections(SR_ref_path_points)
+    SR_split = find_all_split_points(SR_ref_path_points)
     # save_intersection_bg_figs(SR_ref_path_points, SR_intersections, map_dir+map_name,
     #                           'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
-    # crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
-    #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/')
-    # plot_ref_path_divided(map_dir + map_name, ref_path_points)
+    rotate_n = 49
+    crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
+                           'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
+                    'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # plot_ref_path(map_dir + map_name, SR_ref_path_points)
-    if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
-        csv_data = pickle.load(pickle_file)
-        pickle_file.close()
-    else:
-        csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
-                                   SR_ref_path_points, ref_point_frenet,
-                                   SR_starting_area_dict, SR_end_area_dict)
-        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
-        pickle.dump(csv_data, pickle_file)
-        pickle_file.close()
-    all_edges = save_edges(csv_data, SR_intersections, ref_point_frenet, SR_starting_area_dict)
-
-    pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
-    pickle.dump(all_edges, pickle_file)
-    pickle_file.close()
+    # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
+    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
+    #     csv_data = pickle.load(pickle_file)
+    #     pickle_file.close()
+    # else:
+    #     csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
+    #                                SR_ref_path_points, ref_point_frenet,
+    #                                SR_starting_area_dict, SR_end_area_dict)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
+    #     pickle.dump(csv_data, pickle_file)
+    #     pickle_file.close()
+    # all_edges = save_edges(csv_data, SR_intersections, ref_point_frenet, SR_starting_area_dict)
+    #
+    # pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
+    # pickle.dump(all_edges, pickle_file)
+    # pickle_file.close()
 
