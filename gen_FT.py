@@ -1,18 +1,5 @@
-import matplotlib.patches as patches
 import scipy.io as scio
-import numpy as np
-import math
-import glob
-import os
 import pickle
-from scipy.optimize import leastsq
-import matplotlib.pyplot as plt
-from utils import map_vis_without_lanelet
-from align_ref_img import counterclockwise_rotate
-from utils.new_coor_ref_path_utils import judge_in_box
-from utils import dataset_reader
-from utils import dict_utils
-from utils.coordinate_transform import get_frenet
 from utils.roundabout_utils import *
 
 FT_starting_area_dict = dict()
@@ -93,20 +80,35 @@ if __name__ == '__main__':
     cx, cy = fit_circle(circle_merge_point)
     # a dict, call by path return an array(x,2)
     FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
-
+    complete = [['1-10', '1--1-2'], ['1-12', '1--1-2'], ['3-2', '3--1-4'],
+                ['7-4', '7--1-2'], ['7-6', '7--1-2'],
+                ['9-6', '9--1-2'], ['9-8', '9--1-2'],
+                ['11-6', '11--1-2'], ['11-8', '11--1-2']]
+    for cmp, ref in complete:
+        xp1 = FT_ref_path_points[cmp][:, 0]
+        yp1 = FT_ref_path_points[cmp][:, 1]
+        xp2 = FT_ref_path_points[ref][:, 0]
+        yp2 = FT_ref_path_points[ref][:, 1]
+        append_x, append_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
+        xp1 = append_x + list(xp1)
+        yp1 = append_y + list(yp1)
+        xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
+        FT_ref_path_points[cmp] = xyp1
     # plot_ref_path_divided(map_dir + map_name, ref_path_points)
-    plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
+    # plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
     FT_intersections = find_all_intersections(FT_ref_path_points)
-    FT_split_points = find_all_split_points(FT_ref_path_points)
-    # save_intersection_bg_figs(FT_ref_path_points, FT_intersections, map_dir+map_name,
-    #                           'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    FT_split = find_all_split_points(FT_ref_path_points)
+    save_intersection_bg_figs(FT_ref_path_points, FT_intersections, map_dir+map_name,
+                              'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    save_split_bg_figs(FT_ref_path_points, FT_split, map_dir + map_name,
+                       'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(FT_ref_path_points)
     rotate_n = 49
-    # crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
-    #                        'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
-    # crop_split_figs(FT_ref_path_points, FT_split_points, ref_point_frenet,
-    #                 'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
+                           'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    crop_split_figs(FT_ref_path_points, FT_split, ref_point_frenet,
+                    'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
     # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl'):
     #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'rb')
     #     csv_data = pickle.load(pickle_file)
@@ -126,7 +128,7 @@ if __name__ == '__main__':
     #     for ek in range(start, end):
     #         split_data[edge_keys[ek]] = csv_data[edge_keys[ek]]
     #     split_edges = save_edges(split_data, FT_intersections, ref_point_frenet,
-    #                              FT_starting_area_dict, FT_split_points)
+    #                              FT_starting_area_dict, FT_split)
     #     pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(k), 'wb')
     #     pickle.dump(split_edges, pickle_file)
     #     pickle_file.close()

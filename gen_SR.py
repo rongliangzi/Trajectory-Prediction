@@ -88,7 +88,7 @@ if __name__ == '__main__':
                               'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
     save_split_bg_figs(SR_ref_path_points, SR_split, map_dir+map_name,
                        'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
-    # rotate_n = 49
+    rotate_n = 49
     # crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
     #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,

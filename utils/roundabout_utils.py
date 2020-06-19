@@ -166,6 +166,7 @@ def find_all_intersections(ref_paths):
 
 def save_split_bg_figs(ref_paths, split, map_file, save_dir):
     keys = sorted(ref_paths.keys())
+    fig_n = 0
     for i, path1 in enumerate(keys):
         if len(split[path1].keys()) == 0:
             continue
@@ -197,10 +198,13 @@ def save_split_bg_figs(ref_paths, split, map_file, save_dir):
                 print('make dir: ', save_dir)
             plt.savefig(save_dir + '{}.png'.format(path1 + '_' + path2))
             plt.close()
+            fig_n += 1
+            print(fig_n)
 
 
 def save_intersection_bg_figs(ref_paths, intersections, map_file, save_dir):
     keys = sorted(ref_paths.keys())
+    fig_n = 0
     for i, path1 in enumerate(keys):
         if len(intersections[path1].keys()) == 0:
             continue
@@ -234,6 +238,8 @@ def save_intersection_bg_figs(ref_paths, intersections, map_file, save_dir):
                     print('make dir: ', save_dir)
                 plt.savefig(save_dir+'{}.png'.format(path1+'_'+path2+'_'+str(k)))
                 plt.close()
+                fig_n += 1
+                print(fig_n)
 
 
 def ref_path_completion(xp, yp, up, bottom, left, right, mode):
