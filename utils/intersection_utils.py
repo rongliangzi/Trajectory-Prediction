@@ -58,16 +58,16 @@ def find_merging_point(x, y, dis, th=0.8):
     return merging_points
 
 
-def find_split_point(xy1, xy2, th=2):
+def find_split_point(xy1, xy2, th=1):
     dis = cal_dis(xy1, xy2)
     # minimum distance of each row
     min_dis = dis.min(axis=1)
     # id of y for minimum distance of each row
     id2 = np.argmin(dis, axis=1)
-    i = 0
+    i = 6
     cnt = 0
     while i < len(min_dis) - 10:
-        if min_dis[i - 6] < th < 0.5 * min_dis[i + 5] and min_dis[i - 3] < th < 0.4 * min_dis[i + 10] \
+        if min_dis[i - 6] < th < min_dis[i + 5] and min_dis[i - 3] < th < 0.8 * min_dis[i + 10] \
                 and min_dis[i] < th:
             split_point = (xy1[i] + xy2[id2[i]]) / 2
             return split_point, i, id2[i], 'split_' + str(cnt)

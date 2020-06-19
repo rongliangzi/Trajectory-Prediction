@@ -62,24 +62,6 @@ FT_end_area_dict[12]['x'] = [1029.2, 1034.4, 1038.6, 1033.2]
 FT_end_area_dict[12]['y'] = [975.4, 967.6, 969.3, 977]
 
 
-def plot_raw_ref_path(map_file, all_points, circle_point):
-    fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
-    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-    for way_points in all_points[0, :]:
-        x = [p[0] for p in way_points]
-        y = [p[1] for p in way_points]
-        plt.plot(x, y, linewidth=4)
-
-    for p in circle_point:
-        if math.isnan(p[0][0]):
-            continue
-        circle = patches.Circle(p[0], 1, color='r', zorder=3)
-        axes.add_patch(circle)
-    plot_start_end_area(axes, FT_starting_area_dict, FT_end_area_dict)
-    fig.canvas.mpl_connect('button_press_event', on_press)
-    plt.show()
-
-
 def plot_ref_path_divided(map_file, ref_path_points):
     fig, axes = plt.subplots(2, 3)
     start = dict()

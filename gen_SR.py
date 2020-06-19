@@ -1,14 +1,5 @@
-import matplotlib.patches as patches
 import scipy.io as scio
-import numpy as np
-import math
-import glob
-import os
 import pickle
-
-import matplotlib.pyplot as plt
-from utils import map_vis_without_lanelet
-from utils.new_coor_ref_path_utils import judge_in_box
 
 
 from utils.roundabout_utils import *
@@ -46,23 +37,6 @@ SR_end_area_dict[8]['x'] = [981.2, 983.9, 987.8, 987.9]
 SR_end_area_dict[8]['y'] = [995.2, 989, 988.5, 995.4]
 
 
-def plot_raw_ref_path(map_file, all_points, circle_point):
-    fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
-    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-    for way_points in all_points[0, :]:
-        x = [p[0] for p in way_points]
-        y = [p[1] for p in way_points]
-        plt.plot(x, y, linewidth=4)
-    plot_start_end_area(axes, SR_starting_area_dict, SR_end_area_dict)
-    for p in circle_point:
-        if math.isnan(p[0][0]):
-            continue
-        circle = patches.Circle(p[0], 1, color='r', zorder=3)
-        axes.add_patch(circle)
-    fig.canvas.mpl_connect('button_press_event', on_press)
-    plt.show()
-
-
 def plot_ref_path_divided(map_file, ref_path_points):
     fig, axes = plt.subplots(2, 3)
     start = dict()
@@ -95,32 +69,45 @@ if __name__ == '__main__':
     circle_x, circle_y = fit_circle(all_circle_points)
     # a dict, call by path return an array(x,2)
     SR_ref_path_points = get_ref_path(mat_data, circle_x, circle_y)
+    complete = [['1-8', '1--1-2'], ['3-2', '3--1-4'], ['5-4', '5--1-2'], ['7-6', '7--1-2']]
+    for cmp, ref in complete:
+        xp1 = SR_ref_path_points[cmp][:, 0]
+        yp1 = SR_ref_path_points[cmp][:, 1]
+        xp2 = SR_ref_path_points[ref][:, 0]
+        yp2 = SR_ref_path_points[ref][:, 1]
+        append_x, append_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
+        xp1 = append_x + list(xp1)
+        yp1 = append_y + list(yp1)
+        xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
+        SR_ref_path_points[cmp] = xyp1
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
     SR_intersections = find_all_intersections(SR_ref_path_points)
     SR_split = find_all_split_points(SR_ref_path_points)
-    # save_intersection_bg_figs(SR_ref_path_points, SR_intersections, map_dir+map_name,
-    #                           'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+    save_intersection_bg_figs(SR_ref_path_points, SR_intersections, map_dir+map_name,
+                              'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+    save_split_bg_figs(SR_ref_path_points, SR_split, map_dir+map_name,
+                       'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
     # rotate_n = 49
     # crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
     #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
     #                 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
-    # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
-    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
-    #     csv_data = pickle.load(pickle_file)
-    #     pickle_file.close()
-    # else:
-    #     csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
-    #                                SR_ref_path_points, ref_point_frenet,
-    #                                SR_starting_area_dict, SR_end_area_dict)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
-    #     pickle.dump(csv_data, pickle_file)
-    #     pickle_file.close()
-    # all_edges = save_edges(csv_data, SR_intersections, ref_point_frenet, SR_starting_area_dict)
+    # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
+    if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
+        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
+        csv_data = pickle.load(pickle_file)
+        pickle_file.close()
+    else:
+        csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
+                                   SR_ref_path_points, ref_point_frenet,
+                                   SR_starting_area_dict, SR_end_area_dict)
+        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
+        pickle.dump(csv_data, pickle_file)
+        pickle_file.close()
+    # all_edges = save_edges(csv_data, SR_intersections, ref_point_frenet,
+    #                        SR_starting_area_dict, SR_split)
     #
     # pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
     # pickle.dump(all_edges, pickle_file)
     # pickle_file.close()
-
