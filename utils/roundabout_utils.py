@@ -56,6 +56,55 @@ def nearest_c_point(p, x_list, y_list):
     return min_i, xn, yn
 
 
+def plot_start_end_area(ax, starting_area_dict, end_area_dict):
+    for key, v in starting_area_dict.items():
+        x = v['x']
+        y = v['y']
+        stopline = v['stopline']
+        stop_x = [st[0] for st in stopline]
+        stop_y = [st[1] for st in stopline]
+        if key == 1:
+            k = (stop_y[1] - stop_y[0]) / (stop_x[1] - stop_x[0])
+            b = (stop_x[1] * stop_y[0] - stop_x[0] * stop_y[1]) / (stop_x[1] - stop_x[0])
+            b1 = b + 6 * (1 + k ** 2) ** 0.5
+            b2 = b - 2 * (1 + k ** 2) ** 0.5
+            b3 = b - 6 * (1 + k ** 2) ** 0.5
+            b4 = b + 2 * (1 + k ** 2) ** 0.5
+            x1 = np.array([i for i in range(930, 1070)])
+            ax.plot(x1, k * x1 + b1, linewidth=5)
+            ax.plot(x1, k * x1 + b2, linewidth=5)
+            ax.plot(x1, k * x1 + b3, linewidth=5)
+            ax.plot(x1, k * x1 + b4, linewidth=5)
+        ax.plot(stop_x, stop_y, c='g', linewidth=5, zorder=30)
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    for key, v in end_area_dict.items():
+        x = v['x']
+        y = v['y']
+        ax.text(x[0], y[0], key, fontsize=20)
+        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+
+
+def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
+    fig, axes = plt.subplots(1, 1)
+    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
+    keys = sorted(ref_path_points.keys())
+    for k in keys:
+        v = ref_path_points[k]
+        xp = [p[0] for p in v]
+        yp = [p[1] for p in v]
+        plt.plot(xp, yp, linewidth=4)
+    plot_start_end_area(axes, starting_area_dict, end_area_dict)
+    fig.canvas.mpl_connect('button_press_event', on_press)
+    plt.show()
+
+
 def find_all_split_points(ref_paths):
     split_points = dict()
     path_names = sorted(ref_paths.keys())

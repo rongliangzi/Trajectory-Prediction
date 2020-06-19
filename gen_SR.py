@@ -46,29 +46,6 @@ SR_end_area_dict[8]['x'] = [981.2, 983.9, 987.8, 987.9]
 SR_end_area_dict[8]['y'] = [995.2, 989, 988.5, 995.4]
 
 
-def plot_start_end_area(ax):
-    for key, v in SR_starting_area_dict.items():
-        x = v['x']
-        y = v['y']
-        stopline = v['stopline']
-        stop_x = [st[0] for st in stopline]
-        stop_y = [st[1] for st in stopline]
-        ax.plot(stop_x, stop_y, c='g', linewidth=5, zorder=30)
-        ax.text(x[0], y[0], key, fontsize=20)
-        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
-        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
-        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
-        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
-    for key, v in SR_end_area_dict.items():
-        x = v['x']
-        y = v['y']
-        ax.text(x[0], y[0], key, fontsize=20)
-        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
-        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
-        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
-        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
-
-
 def plot_raw_ref_path(map_file, all_points, circle_point):
     fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
     map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
@@ -76,7 +53,7 @@ def plot_raw_ref_path(map_file, all_points, circle_point):
         x = [p[0] for p in way_points]
         y = [p[1] for p in way_points]
         plt.plot(x, y, linewidth=4)
-    plot_start_end_area(axes)
+    plot_start_end_area(axes, SR_starting_area_dict, SR_end_area_dict)
     for p in circle_point:
         if math.isnan(p[0][0]):
             continue
@@ -106,20 +83,6 @@ def plot_ref_path_divided(map_file, ref_path_points):
     plt.show()
 
 
-def plot_ref_path(map_file, ref_path_points):
-    fig, axes = plt.subplots(1, 1)
-    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-    keys = sorted(ref_path_points.keys())
-    for k in keys:
-        v = ref_path_points[k]
-        xp = [p[0] for p in v]
-        yp = [p[1] for p in v]
-        plt.plot(xp, yp, linewidth=4)
-    plot_start_end_area(axes)
-    fig.canvas.mpl_connect('button_press_event', on_press)
-    plt.show()
-
-
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
     map_name = "DR_USA_Roundabout_SR.osm"
@@ -143,7 +106,7 @@ if __name__ == '__main__':
     #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
     #                 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    plot_ref_path(map_dir + map_name, SR_ref_path_points)
+    plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
     # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
     #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
     #     csv_data = pickle.load(pickle_file)
