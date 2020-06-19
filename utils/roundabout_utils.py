@@ -535,7 +535,9 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas, split_points):
                 edges[ego_id][start_ts] = dict()
                 ts_20 = start_ts + 19 * 100
                 ego_20_ms = ego_track.motion_states[ts_20]
-
+                ego_20_s = ego_20_ms.frenet_s
+                ego_20_x = ego_20_ms.x
+                ego_20_y = ego_20_ms.y
                 # save x,y coordinate of all involved agents in 70 frames
                 edges[ego_id][start_ts]['coordinate'] = dict()
                 # id of involved agents in 20th frame
@@ -550,6 +552,7 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas, split_points):
                     # not self, and containing this timestamp
                     if other_id == ego_id or ts_20 not in other_track.motion_states.keys():
                         continue
+                    other_20_s = other_track.motion_states[ts_20].frenet_s
                     other_20_x = other_track.motion_states[ts_20].x
                     other_20_y = other_track.motion_states[ts_20].y
                     # delta of x,y in (-10, 10)
@@ -557,6 +560,23 @@ def save_edges(csv_dict, is_info, ref_frenet, starting_areas, split_points):
                         continue
                     # have intersection
                     if other_path in is_info[ego_path].keys():
+                        # judge if having passed the intersection
+                        intersections = is_info[ego_path][other_path]
+                        closest_its = None
+                        closest_dis = 1e8
+                        # find the closest intersection
+                        for its in intersections:
+                            p, _, _ = its
+                            dis = (p[0] - ego_20_x) ** 2 + (p[1] - ego_20_y) ** 2
+                            if dis < closest_dis:
+                                closest_dis = dis
+                                closest_its = its
+                        its_s1 = ref_frenet[ego_path][closest_its[1]]
+                        its_s2 = ref_frenet[other_path][closest_its[2]]
+                        # having passed the intersection
+                        if ego_20_s > its_s1 or other_20_s > its_s2:
+                            continue
+
                         edges[ego_id][start_ts]['agents'].append(other_id)
                         edges[ego_id][start_ts]['coordinate'][other_id] = get_70_coor(other_track, start_ts)
                         pair = sorted([ego_path, other_path])

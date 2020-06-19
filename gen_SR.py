@@ -15,17 +15,21 @@ from utils.roundabout_utils import *
 
 SR_starting_area_dict = dict()
 SR_starting_area_dict[1] = dict()
-SR_starting_area_dict[1]['x'] = [957.2, 955.2, 968.8, 968.7]
-SR_starting_area_dict[1]['y'] = [1015.8, 1009.6, 1006.7, 1013.6]
+SR_starting_area_dict[1]['x'] = [963.4, 964.1, 972.2, 971.7]
+SR_starting_area_dict[1]['y'] = [1014.6, 1006.9, 1005.9, 1013.4]
+SR_starting_area_dict[1]['stopline'] = [(969.7, 1013.4), (970.2, 1005.9)]
 SR_starting_area_dict[3] = dict()
-SR_starting_area_dict[3]['x'] = [986.6, 980.8, 989.6, 993.2]
-SR_starting_area_dict[3]['y'] = [1058, 1047, 1046.8, 1059.5]
+SR_starting_area_dict[3]['x'] = [984.3, 979.1, 989.1, 991.15]
+SR_starting_area_dict[3]['y'] = [1053, 1045.7, 1044.5, 1052.5, ]
+SR_starting_area_dict[3]['stopline'] = [(980.5, 1047.3), (989.1, 1046.5)]
 SR_starting_area_dict[5] = dict()
-SR_starting_area_dict[5]['x'] = [1015.3, 1013.2, 1027, 1029.3]
-SR_starting_area_dict[5]['y'] = [1034.9, 1027, 1024, 1030]
+SR_starting_area_dict[5]['x'] = [1008.7, 1008.5, 1016.5, 1016.6]
+SR_starting_area_dict[5]['y'] = [1034.7, 1027.8, 1026.4, 1033.2]
+SR_starting_area_dict[5]['stopline'] = [(1010.7, 1034.7), (1010.5, 1027.8)]
 SR_starting_area_dict[7] = dict()
-SR_starting_area_dict[7]['x'] = [989, 988.2, 993.4, 997.2]
-SR_starting_area_dict[7]['y'] = [991.5, 984.9, 984.8, 991.1]
+SR_starting_area_dict[7]['x'] = [988.5, 988.5, 992.8, 995.6]
+SR_starting_area_dict[7]['y'] = [991.4, 983.4, 983, 990.5]
+SR_starting_area_dict[7]['stopline'] = [(988.5, 989.4), (995.6, 988.5)]
 
 SR_end_area_dict = dict()
 SR_end_area_dict[2] = dict()
@@ -46,6 +50,10 @@ def plot_start_end_area(ax):
     for key, v in SR_starting_area_dict.items():
         x = v['x']
         y = v['y']
+        stopline = v['stopline']
+        stop_x = [st[0] for st in stopline]
+        stop_y = [st[1] for st in stopline]
+        ax.plot(stop_x, stop_y, c='g', linewidth=5, zorder=30)
         ax.text(x[0], y[0], key, fontsize=20)
         ax.plot(x[0:2], y[0:2], c='r', zorder=40)
         ax.plot(x[1:3], y[1:3], c='r', zorder=40)
@@ -130,12 +138,12 @@ if __name__ == '__main__':
     SR_split = find_all_split_points(SR_ref_path_points)
     # save_intersection_bg_figs(SR_ref_path_points, SR_intersections, map_dir+map_name,
     #                           'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
-    rotate_n = 49
-    crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
-                           'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
-                    'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    # plot_ref_path(map_dir + map_name, SR_ref_path_points)
+    # rotate_n = 49
+    # crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
+    #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
+    #                 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    plot_ref_path(map_dir + map_name, SR_ref_path_points)
     # if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
     #     pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
     #     csv_data = pickle.load(pickle_file)
