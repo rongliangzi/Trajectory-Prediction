@@ -78,8 +78,9 @@ if __name__ == '__main__':
     # plot_raw_ref_path(map_dir + map_name, para_path, circle_merge_point)
 
     cx, cy = fit_circle(circle_merge_point)
-    # a dict, call by path return an array(x,2)
+    # a dict, call by path and return an array(x,2)
     FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
+    # complete missing trajectory to make paths have the same frenet starting point
     complete = [['1-10', '1--1-2'], ['1-12', '1--1-2'], ['3-2', '3--1-4'],
                 ['7-4', '7--1-2'], ['7-6', '7--1-2'],
                 ['9-6', '9--1-2'], ['9-8', '9--1-2'],
@@ -98,6 +99,7 @@ if __name__ == '__main__':
     # plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
     FT_intersections = find_all_intersections(FT_ref_path_points)
     FT_split = find_all_split_points(FT_ref_path_points)
+
     # save_intersection_bg_figs(FT_ref_path_points, FT_intersections, map_dir+map_name,
     #                           'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
     # save_split_bg_figs(FT_ref_path_points, FT_split, map_dir + map_name,
@@ -105,10 +107,12 @@ if __name__ == '__main__':
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(FT_ref_path_points)
     rotate_n = 49
-    crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
-                           'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
-    crop_split_figs(FT_ref_path_points, FT_split, ref_point_frenet,
-                    'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+
+    # crop_intersection_figs(FT_ref_path_points, FT_intersections, ref_point_frenet,
+    #                        'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    # crop_split_figs(FT_ref_path_points, FT_split, ref_point_frenet,
+    #                 'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+
     if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_FT.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
@@ -120,7 +124,7 @@ if __name__ == '__main__':
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
     edge_keys = sorted(csv_data.keys())
-    s = 4
+
     # for i, c_data in csv_data.items():
     #     print(i)
     #     edges = get_csv_edges(c_data, FT_intersections, ref_point_frenet,
@@ -128,17 +132,19 @@ if __name__ == '__main__':
     #     pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(i), 'wb')
     #     pickle.dump(edges, pickle_file)
     #     pickle_file.close()
-    # for k in range(s):
-    #     start = k*len(edge_keys)//s
-    #     if k == s-1:
-    #         end = len(edge_keys)
-    #     else:
-    #         end = (k + 1) * len(edge_keys) // s
-    #     split_data = dict()
-    #     for ek in range(start, end):
-    #         split_data[edge_keys[ek]] = csv_data[edge_keys[ek]]
-    #     split_edges = save_all_edges(split_data, FT_intersections, ref_point_frenet,
-    #                                  FT_starting_area_dict, FT_split)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(k), 'wb')
-    #     pickle.dump(split_edges, pickle_file)
-    #     pickle_file.close()
+
+    s = 4
+    for k in range(s):
+        start = k*len(edge_keys)//s
+        if k == s-1:
+            end = len(edge_keys)
+        else:
+            end = (k + 1) * len(edge_keys) // s
+        split_data = dict()
+        for ek in range(start, end):
+            split_data[edge_keys[ek]] = csv_data[edge_keys[ek]]
+        split_edges = save_all_edges(split_data, FT_intersections, ref_point_frenet,
+                                     FT_starting_area_dict, FT_split)
+        pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(k), 'wb')
+        pickle.dump(split_edges, pickle_file)
+        pickle_file.close()

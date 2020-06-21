@@ -84,16 +84,21 @@ if __name__ == '__main__':
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
     SR_intersections = find_all_intersections(SR_ref_path_points)
     SR_split = find_all_split_points(SR_ref_path_points)
+    # visualize the ref paths with background
     # save_intersection_bg_figs(SR_ref_path_points, SR_intersections, map_dir+map_name,
     #                           'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
     # save_split_bg_figs(SR_ref_path_points, SR_split, map_dir+map_name,
     #                    'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+
+    # generate intersection figures
     rotate_n = 49
-    crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
-                           'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
-                    'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    # crop_intersection_figs(SR_ref_path_points, SR_intersections, ref_point_frenet,
+    #                        'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
+    #                 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
+
+    # generate or load coordinate, velocity, frenet info of agents
     if os.path.exists('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
@@ -105,9 +110,10 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    # all_edges = save_all_edges(csv_data, SR_intersections, ref_point_frenet,
-    #                            SR_starting_area_dict, SR_split)
-    #
-    # pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
-    # pickle.dump(all_edges, pickle_file)
-    # pickle_file.close()
+    # save edge info
+    all_edges = save_all_edges(csv_data, SR_intersections, ref_point_frenet,
+                               SR_starting_area_dict, SR_split)
+
+    pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
+    pickle.dump(all_edges, pickle_file)
+    pickle_file.close()
