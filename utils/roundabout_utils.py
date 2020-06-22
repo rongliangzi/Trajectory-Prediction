@@ -690,6 +690,7 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
             # intersections involved in 20th frame
             edges[ego_id][start_ts]['task'] = set()
             edges[ego_id][start_ts]['xy'][ego_id] = get_70_coor(ego_data, start_ts)
+            edges[ego_id][start_ts]['its_id'] = dict()
             case_its_s = dict()
             # find surrounding cars according to 20th frame
             for other_id, other_data in c_data.items():
@@ -720,6 +721,7 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
                             closest_its = its
                             closest_k = its_k
                     assert closest_k >= 0, 'closest_k<0 in get_csv_edges()'
+                    edges[ego_id][start_ts]['its_id'][other_id] = closest_k
                     ego_its_s = ref_frenet[ego_path][closest_its[1]]
                     other_its_s = ref_frenet[other_path][closest_its[2]]
                     # having passed the intersection
@@ -735,6 +737,7 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
                 elif other_path == ego_path and ego_20_s < other_20_s:
                     edges[ego_id][start_ts]['agents'].append(other_id)
                     edges[ego_id][start_ts]['xy'][other_id] = get_70_coor(other_data, start_ts)
+                    edges[ego_id][start_ts]['its_id'][other_id] = 0
                     task = ego_path + '_' + other_path + '_0'
                     edges[ego_id][start_ts]['task'].add(task)
                 # having the same starting area and different end area
@@ -750,6 +753,7 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
                         continue
                     edges[ego_id][start_ts]['agents'].append(other_id)
                     edges[ego_id][start_ts]['xy'][other_id] = get_70_coor(other_data, start_ts)
+                    edges[ego_id][start_ts]['its_id'][other_id] = 0
                     pair = sorted([ego_path, other_path])
                     task = pair[0] + '_' + pair[1] + '_0'
                     edges[ego_id][start_ts]['task'].add(task)

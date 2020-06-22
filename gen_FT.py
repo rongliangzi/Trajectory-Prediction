@@ -125,14 +125,6 @@ if __name__ == '__main__':
         pickle_file.close()
     edge_keys = sorted(csv_data.keys())
 
-    # for i, c_data in csv_data.items():
-    #     print(i)
-    #     edges = get_csv_edges(c_data, FT_intersections, ref_point_frenet,
-    #                              FT_starting_area_dict, FT_split)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/edges_FT_{}.pkl'.format(i), 'wb')
-    #     pickle.dump(edges, pickle_file)
-    #     pickle_file.close()
-
     s = 4
     for k in range(s):
         start = k*len(edge_keys)//s
