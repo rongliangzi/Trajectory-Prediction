@@ -2,7 +2,7 @@ from utils import map_vis_without_lanelet
 from utils.intersection_utils import *
 from utils import coordinate_transform
 from utils.starting_area_utils import *
-from utils.new_coor_ref_path_utils import *
+from utils.MA_utils import *
 from align_ref_img import counterclockwise_rotate
 import matplotlib.pyplot as plt
 import os

@@ -107,13 +107,14 @@ if __name__ == '__main__':
         csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
                                    SR_ref_path_points, ref_point_frenet,
                                    SR_starting_area_dict, SR_end_area_dict)
-        pickle_file = open('D:/Dev/UCB task/pickle/track_path_frenet_SR.pkl', 'wb')
+        pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
     # save edge info
-    all_edges = save_all_edges(csv_data, SR_intersections, ref_point_frenet,
-                               SR_starting_area_dict, SR_split)
-
-    pickle_file = open('D:/Dev/UCB task/pickle/edges_SR.pkl', 'wb')
-    pickle.dump(all_edges, pickle_file)
-    pickle_file.close()
+    for k, v in csv_data.items():
+        print(k)
+        split_edges = get_csv_edges(v, SR_intersections, ref_point_frenet,
+                                    SR_starting_area_dict, SR_split)
+        pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
+        pickle.dump(split_edges, pickle_file)
+        pickle_file.close()

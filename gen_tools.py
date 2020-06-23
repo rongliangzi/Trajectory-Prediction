@@ -1,5 +1,5 @@
 from utils.starting_area_utils import *
-from utils import new_coor_ref_path_utils
+from utils import MA_utils
 from utils.coordinate_transform import *
 from utils.intersection_utils import find_intersection
 from align_ref_img import counterclockwise_rotate
@@ -34,7 +34,7 @@ def ref_point2frenet(x_points, y_points, stoplinex, stopliney):
 
 
 def save_ref_path_pickle():
-    ref_paths, csv_dict, rare_paths = new_coor_ref_path_utils.get_ref_paths(data_base_path, data_dir_name)
+    ref_paths, csv_dict, rare_paths = MA_utils.get_ref_paths(data_base_path, data_dir_name)
     ref_path_info = dict()
     ref_path_info['ref_paths'] = ref_paths
     ref_path_info['csv_dict'] = csv_dict
@@ -46,7 +46,7 @@ def save_ref_path_pickle():
 
 
 def save_defined_ref_path_pickle():
-    ref_paths, csv_dict = new_coor_ref_path_utils.get_defined_ref_paths(defined_path_file, csv_path, x_start, y_start)
+    ref_paths, csv_dict = MA_utils.get_defined_ref_paths(defined_path_file, csv_path, x_start, y_start)
     ref_path_info = dict()
     ref_path_info['ref_paths'] = ref_paths
     ref_path_info['csv_dict'] = csv_dict

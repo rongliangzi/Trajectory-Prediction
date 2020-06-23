@@ -1,7 +1,7 @@
 import pickle
 import math
 from align_ref_img import counterclockwise_rotate
-from utils.new_coor_ref_path_utils import *
+from utils.MA_utils import *
 from gen_tools import ref_point2frenet
 from utils.starting_area_utils import rate
 import numpy as np

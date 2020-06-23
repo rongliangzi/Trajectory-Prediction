@@ -39,6 +39,16 @@ starting_area_dict[14]['x'] = [1006, 996.2, 1011.4, 1011.1]
 starting_area_dict[14]['y'] = [1020, 1010, 1009.9, 1020.2]
 starting_area_dict[14]['stoplinex'] = [1004, 1011.3]
 starting_area_dict[14]['stopliney'] = [1012, 1012]
+x_s, y_s = 971, 950
+new_starting_area_dict = dict()
+for starting_area in starting_area_dict.keys():
+    new_starting_area_dict[starting_area] = dict()
+    new_starting_area_dict[starting_area]['x'] = [(x - x_s) for x in starting_area_dict[starting_area]['x']]
+    new_starting_area_dict[starting_area]['y'] = [(y - y_s) for y in starting_area_dict[starting_area]['y']]
+    new_starting_area_dict[starting_area]['stoplinex'] = [(x - x_s) for x in
+                                                          starting_area_dict[starting_area]['stoplinex']]
+    new_starting_area_dict[starting_area]['stopliney'] = [(y - y_s) for y in
+                                                          starting_area_dict[starting_area]['stopliney']]
 
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'

@@ -46,16 +46,16 @@ starting_area_dict[14]['stoplinex'] = [1004, 1011.3]
 starting_area_dict[14]['stopliney'] = [1012, 1012]
 
 x_s, y_s = 971, 950
-rate = 5
-new_coor_starting_area_dict = dict()
+rate = 1
+new_starting_area_dict = dict()
 for starting_area in starting_area_dict.keys():
-    new_coor_starting_area_dict[starting_area] = dict()
-    new_coor_starting_area_dict[starting_area]['x'] = [(x - x_s) * rate for x in starting_area_dict[starting_area]['x']]
-    new_coor_starting_area_dict[starting_area]['y'] = [(y - y_s) * rate for y in starting_area_dict[starting_area]['y']]
-    new_coor_starting_area_dict[starting_area]['stoplinex'] = [(x - x_s) * rate for x in
-                                                               starting_area_dict[starting_area]['stoplinex']]
-    new_coor_starting_area_dict[starting_area]['stopliney'] = [(y - y_s) * rate for y in
-                                                               starting_area_dict[starting_area]['stopliney']]
+    new_starting_area_dict[starting_area] = dict()
+    new_starting_area_dict[starting_area]['x'] = [(x - x_s) * rate for x in starting_area_dict[starting_area]['x']]
+    new_starting_area_dict[starting_area]['y'] = [(y - y_s) * rate for y in starting_area_dict[starting_area]['y']]
+    new_starting_area_dict[starting_area]['stoplinex'] = [(x - x_s) * rate for x in
+                                                          starting_area_dict[starting_area]['stoplinex']]
+    new_starting_area_dict[starting_area]['stopliney'] = [(y - y_s) * rate for y in
+                                                          starting_area_dict[starting_area]['stopliney']]
 
 
 def find_starting_area(work_dir):
