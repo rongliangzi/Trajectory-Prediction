@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from utils import map_vis_without_lanelet
 from align_ref_img import counterclockwise_rotate
-from utils.intersection_utils import find_intersection, find_split_point
+from utils.intersection_utils import find_interaction
 from utils import dataset_reader
 from utils import dict_utils
 from utils.coordinate_transform import get_frenet
@@ -121,101 +121,36 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
     plt.show()
 
 
-def find_all_split_points(ref_paths):
-    split_points = dict()
+def find_all_interactions(ref_paths):
+    interactions = dict()
     path_names = sorted(ref_paths.keys())
     for path_name in path_names:
-        split_points[path_name] = dict()
-    for path1 in path_names:
-        start_area1 = path1.split('-')[0]
-        for path2 in path_names:
-            if path1 == path2:
-                continue
-            start_area2 = path2.split('-')[0]
-            # having the same starting area
-            if start_area1 != start_area2:
-                continue
-            split_point = find_split_point(ref_paths[path1], ref_paths[path2])
-            if split_point is not None:
-                split_points[path1][path2] = split_point
-    return split_points
-
-
-def find_all_intersections(ref_paths):
-    intersections = dict()
-    path_names = sorted(ref_paths.keys())
-    for path_name in path_names:
-        intersections[path_name] = dict()
+        interactions[path_name] = dict()
     for i, path1 in enumerate(path_names):
-        for j in range(len(path_names)):
+        for j in range(i+1, len(path_names)):
             path2 = path_names[j]
-            if path1.split('-')[0] == path2.split('-')[0]:
-                continue
-            path1_x = ref_paths[path1][:, 0]
-            path1_y = ref_paths[path1][:, 1]
-            path2_x = ref_paths[path2][:, 0]
-            path2_y = ref_paths[path2][:, 1]
-            intersection = find_intersection(path1_x, path1_y, path2_x, path2_y,
-                                             dis_th=2, mg_th=0.3)
-            if intersection is not None and len(intersection) > 0:
-                # intersection of path1 and path2 exists
-                intersections[path1][path2] = intersection
-    return intersections
+            interaction12, interaction21 = find_interaction(ref_paths[path1], ref_paths[path2])
+            if interaction12 is not None and len(interaction12) > 0:
+                # interaction of path1 and path2 exists
+                interactions[path1][path2] = interaction12
+                interactions[path2][path1] = interaction21
+    return interactions
 
 
-def save_split_bg_figs(ref_paths, split, map_file, save_dir):
+def save_interaction_bg_figs(ref_paths, interactions, map_file, save_dir):
     keys = sorted(ref_paths.keys())
     fig_n = 0
     for i, path1 in enumerate(keys):
-        if len(split[path1].keys()) == 0:
-            continue
-        for j in range(i + 1, len(keys)):
-            path2 = keys[j]
-            if path2 not in split[path1].keys():
-                continue
-            fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
-            map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-            v = ref_paths[path1]
-            xp = [p[0] for p in v]
-            yp = [p[1] for p in v]
-            plt.text(xp[0], yp[0], 'start', fontsize=20)
-            plt.text(xp[-1], yp[-1], 'end', fontsize=20)
-            plt.plot(xp, yp, linewidth=4, label=path1)
-            v = ref_paths[path2]
-            xp = [p[0] for p in v]
-            yp = [p[1] for p in v]
-            plt.text(xp[0], yp[0], 'start', fontsize=20)
-            plt.text(xp[-1], yp[-1], 'end', fontsize=20)
-            plt.plot(xp, yp, linewidth=4, label=path2)
-            p, _, _, cnt = split[path1][path2]
-            circle = patches.Circle(p, 0.8, color=(1, 0, 0),
-                                    zorder=3, label=cnt)
-            axes.add_patch(circle)
-            plt.legend(prop={'size': 20})
-            if not os.path.exists(save_dir):
-                os.mkdir(save_dir)
-                print('make dir: ', save_dir)
-            plt.savefig(save_dir + '{}.png'.format(path1 + '_' + path2))
-            plt.close()
-            fig_n += 1
-            print(fig_n)
-
-
-def save_intersection_bg_figs(ref_paths, intersections, map_file, save_dir):
-    keys = sorted(ref_paths.keys())
-    fig_n = 0
-    for i, path1 in enumerate(keys):
-        if len(intersections[path1].keys()) == 0:
+        if len(interactions[path1].keys()) == 0:
             continue
         for j in range(i+1, len(keys)):
             path2 = keys[j]
-            if path2 not in intersections[path1].keys():
+            if path2 not in interactions[path1].keys():
                 continue
-            m_c = intersections[path1][path2]
-            for k, (p, _, _, cnt) in enumerate(m_c):
-                fig, axes = plt.subplots(1, 1, figsize=(30, 20), dpi=100)
+            ita = interactions[path1][path2]
+            for k, (p, _, _, label) in enumerate(ita):
+                fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
                 map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-
                 v = ref_paths[path1]
                 xp = [p[0] for p in v]
                 yp = [p[1] for p in v]
@@ -229,13 +164,13 @@ def save_intersection_bg_figs(ref_paths, intersections, map_file, save_dir):
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=4, label=path2)
                 circle = patches.Circle(p, 0.8, color=(1 - k * 0.2, 0, 0),
-                                        zorder=3, label=cnt)
+                                        zorder=3, label=label)
                 axes.add_patch(circle)
                 plt.legend(prop={'size': 20})
                 if not os.path.exists(save_dir):
                     os.mkdir(save_dir)
                     print('make dir: ', save_dir)
-                plt.savefig(save_dir+'{}.png'.format(path1+'_'+path2+'_'+str(k)))
+                plt.savefig(save_dir+'{}_{}_{}.png'.format(path1, path2, str(k)))
                 plt.close()
                 fig_n += 1
                 print(fig_n)
@@ -312,9 +247,9 @@ def get_append(xp1, yp1, xps2, yps2, mode):
     return append_x, append_y
 
 
-def rotate_crop_2path_fig(ref_paths, path1, path2, theta, intersection_info, save_dir,
+def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save_dir,
                           k, ref_frenet, n, col_id=(0, 1)):
-    its, first_id, second_id, label = intersection_info
+    its, first_id, second_id, label = interaction_info
     d = 4  # fig size
     r = 20  # range of x and y
     dpi = 50
@@ -431,64 +366,35 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, intersection_info, sav
     plt.close()
 
 
-def crop_intersection_figs(ref_paths, intersections, ref_frenet, save_dir, rotate_n):
+def crop_interaction_figs(ref_paths, interactions, ref_frenet, save_dir, rotate_n):
     keys = sorted(ref_paths.keys())
     random.seed(123)
     count = 0
     for i, path1 in enumerate(keys):
-        if len(intersections[path1].keys()) == 0:
+        if len(interactions[path1].keys()) == 0:
             continue
         for j in range(i + 1, len(keys)):
             path2 = keys[j]
-            if path2 not in intersections[path1].keys():
+            if path2 not in interactions[path1].keys():
                 continue
 
-            m_c = intersections[path1][path2]
-            for k, its_info in enumerate(m_c):
+            ita = interactions[path1][path2]
+            for k, ita_info in enumerate(ita):
                 print(path1, path2)
-                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
+                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
                                       save_dir, k, ref_frenet, 0, (0, 1))
                 # swap the colors
-                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
+                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
                                       save_dir, k, ref_frenet, 1, (1, 0))
                 for r_n in range(rotate_n):
                     theta = random.random() * 2 * math.pi
-                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
+                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
                                           save_dir, k, ref_frenet, 2*(r_n+1), (0, 1))
                     # swap the colors
-                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
+                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
                                           save_dir, k, ref_frenet, 2*(r_n+1)+1, (1, 0))
                 count += (1+rotate_n)*2
                 print(count)
-    return
-
-
-def crop_split_figs(ref_paths, split_points, ref_frenet, save_dir, rotate_n):
-    keys = sorted(ref_paths.keys())
-    random.seed(123)
-    count = 0
-    for i, path1 in enumerate(keys):
-        if len(split_points[path1].keys()) == 0:
-            continue
-        for j in range(i + 1, len(keys)):
-            path2 = keys[j]
-            if path2 not in split_points[path1].keys():
-                continue
-            its_info = split_points[path1][path2]
-            rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
-                                  save_dir, 0, ref_frenet, 0, (0, 1))
-            # swap the colors
-            rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, its_info,
-                                  save_dir, 0, ref_frenet, 1, (1, 0))
-            for r_n in range(rotate_n):
-                theta = random.random() * 2 * math.pi
-                rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
-                                      save_dir, 0, ref_frenet, 2*(r_n + 1), (0, 1))
-                # swap the colors
-                rotate_crop_2path_fig(ref_paths, path1, path2, theta, its_info,
-                                      save_dir, 0, ref_frenet, 2*(r_n + 1)+1, (1, 0))
-            count += (1+rotate_n)*2
-            print(count)
     return
 
 
@@ -682,17 +588,17 @@ def get_70_coor(track_data, start_ts):
     return coors
 
 
-def save_all_edges(csv_dict, is_info, ref_frenet, starting_areas, split_points):
+def save_all_edges(csv_dict, is_info, ref_frenet):
     all_edges = dict()
     for i, c_data in csv_dict.items():
         # get edge info in one csv file
-        edges = get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points)
+        edges = get_csv_edges(c_data, is_info, ref_frenet)
         all_edges[i] = edges
         print(i, ': ', len(edges), '/', len(c_data))
     return all_edges
 
 
-def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
+def get_csv_edges(c_data, ita_info, ref_frenet):
     edges = dict()
     for ego_id, ego_data in c_data.items():
         # if in starting area and have at least 69 frames behind,
@@ -720,8 +626,8 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
             edges[ego_id][start_ts]['agents'] = [ego_id]
             # intersections involved in 20th frame
             edges[ego_id][start_ts]['task'] = set()
-            edges[ego_id][start_ts]['its_id'] = dict()
-            case_its_s = dict()
+            edges[ego_id][start_ts]['ita_id'] = dict()
+            case_ita_s = dict()
             # find surrounding cars in [-10,10] according to 20th frame
             for other_id, other_data in c_data.items():
                 # not self, and containing this timestamp
@@ -738,7 +644,6 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
             to_delete_agents = []
             for id1 in edges[ego_id][start_ts]['agents']:
                 interaction_num = 0
-
                 ms1_20 = c_data[id1]['motion_states'][ts_20]
                 path1 = c_data[id1]['ref path']
                 # find interaction car2
@@ -752,77 +657,53 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
                     ms2_start = c_data[id2]['motion_states'][start_ts_1_2]
                     path2 = c_data[id2]['ref path']
                     # the same path/intersection/splitting point
-                    # have intersection and not arrived
-                    if path2 in is_info[path1].keys():
+                    # have interaction and not arrived
+                    if path2 in ita_info[path1].keys():
                         # judge if having passed the intersection
-                        intersections = is_info[path1][path2]
+                        interactions = ita_info[path1][path2]
                         closest_k = -1
                         closest_dis = 1e10
                         ms2_20 = c_data[id2]['motion_states'][ts_20]
                         # find the nearest intersection of agent1 and agent2
-                        for its_k, its in enumerate(intersections):
-                            p = its[0]
-                            dis = (p[0]-ms1_20['x'])**2+(p[1]-ms1_20['y'])**2
-                            dis += (p[0]-ms2_20['x'])**2+(p[1]-ms2_20['y'])**2
+                        for content_k, content in enumerate(interactions):
+                            p = content[0]
+                            dis = (p[0] - ms1_20['x']) ** 2 + (p[1] - ms1_20['y']) ** 2
+                            dis += (p[0] - ms2_20['x']) ** 2 + (p[1] - ms2_20['y']) ** 2
                             if dis < closest_dis:
                                 closest_dis = dis
-                                closest_k = its_k
-
-                        closest_its = intersections[closest_k]
-                        its_s1 = ref_frenet[path1][closest_its[1]]
-                        its_s2 = ref_frenet[path2][closest_its[2]]
-
+                                closest_k = content_k
+                        closest_its = interactions[closest_k]
+                        ita_s1 = ref_frenet[path1][closest_its[1]]
+                        ita_s2 = ref_frenet[path2][closest_its[2]]
                         # having passed the intersection in the 1st frame, no interaction
-                        if ms1_start['frenet_s'] > its_s1 or ms2_start['frenet_s'] > its_s2:
+                        if ms1_start['frenet_s'] > ita_s1 and ms2_start['frenet_s'] > ita_s2:
                             continue
                         interaction_num += 1
-                        if id1 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id1] = dict()
-                        edges[ego_id][start_ts]['its_id'][id1][id2] = closest_k
-                        if id2 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id2] = dict()
-                        edges[ego_id][start_ts]['its_id'][id2][id1] = closest_k
-                        if id1 not in case_its_s.keys():
-                            case_its_s[id1] = dict()
-                        case_its_s[id1][id2] = (its_s1, its_s2)
-                        if id2 not in case_its_s.keys():
-                            case_its_s[id2] = dict()
-                        case_its_s[id2][id1] = (its_s2, its_s1)
+                        if id1 not in edges[ego_id][start_ts]['ita_id'].keys():
+                            edges[ego_id][start_ts]['ita_id'][id1] = dict()
+                        edges[ego_id][start_ts]['ita_id'][id1][id2] = closest_k
+                        if id2 not in edges[ego_id][start_ts]['ita_id'].keys():
+                            edges[ego_id][start_ts]['ita_id'][id2] = dict()
+                        edges[ego_id][start_ts]['ita_id'][id2][id1] = closest_k
+                        if id1 not in case_ita_s.keys():
+                            case_ita_s[id1] = dict()
+                        case_ita_s[id1][id2] = (ita_s1, ita_s2)
+                        if id2 not in case_ita_s.keys():
+                            case_ita_s[id2] = dict()
+                        case_ita_s[id2][id1] = (ita_s2, ita_s1)
                         pair = sorted([path1, path2])
                         task = pair[0] + '_' + pair[1] + '_' + str(closest_k)
                         edges[ego_id][start_ts]['task'].add(task)
                     # in the same ref path and ego behind other
                     elif path2 == path1:
                         interaction_num += 1
-                        if id1 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id1] = dict()
-                        edges[ego_id][start_ts]['its_id'][id1][id2] = 0
-                        if id2 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id2] = dict()
-                        edges[ego_id][start_ts]['its_id'][id2][id1] = 0
+                        if id1 not in edges[ego_id][start_ts]['ita_id'].keys():
+                            edges[ego_id][start_ts]['ita_id'][id1] = dict()
+                        edges[ego_id][start_ts]['ita_id'][id1][id2] = 0
+                        if id2 not in edges[ego_id][start_ts]['ita_id'].keys():
+                            edges[ego_id][start_ts]['ita_id'][id2] = dict()
+                        edges[ego_id][start_ts]['ita_id'][id2][id1] = 0
                         task = path1 + '_' + path2 + '_0'
-                        edges[ego_id][start_ts]['task'].add(task)
-                    # having the same starting area and different end area
-                    # and the other car is ahead of ego car and not passed
-                    elif path1.split('-')[0] == path2.split('-')[0]:
-                        sp_point = split_points[path1][path2]
-                        split_id1 = sp_point[1]
-                        split_id2 = sp_point[2]
-                        split_s1 = ref_frenet[path1][split_id1]
-                        split_s2 = ref_frenet[path2][split_id2]
-
-                        # having passed the split point in the 1st frame, no interaction
-                        if split_s1 < ms1_start['frenet_s'] or split_s2 < ms2_start['frenet_s']:
-                            continue
-                        interaction_num += 1
-                        if id1 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id1] = dict()
-                        edges[ego_id][start_ts]['its_id'][id1][id2] = 0
-                        if id2 not in edges[ego_id][start_ts]['its_id'].keys():
-                            edges[ego_id][start_ts]['its_id'][id2] = dict()
-                        edges[ego_id][start_ts]['its_id'][id2][id1] = 0
-                        pair = sorted([path1, path2])
-                        task = pair[0] + '_' + pair[1] + '_0'
                         edges[ego_id][start_ts]['task'].add(task)
                     else:
                         pass
@@ -866,23 +747,12 @@ def get_csv_edges(c_data, is_info, ref_frenet, starting_areas, split_points):
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
                             delta_s = cur_ms2['frenet_s'] - cur_ms1['frenet_s']
                             edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), delta_s]
-                        elif id1 in case_its_s.keys() and id2 in case_its_s[id1].keys():
+                        elif id1 in case_ita_s.keys() and id2 in case_ita_s[id1].keys():
                             rel_x, rel_y = cur_ms2['x'] - cur_ms1['x'], cur_ms2['y'] - cur_ms1['y']
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
-                            its_s1, its_s2 = case_its_s[id1][id2]
-                            s_1 = its_s1 - cur_ms1['frenet_s']
-                            s_2 = its_s2 - cur_ms2['frenet_s']
-                            edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), s_1, s_2]
-                        elif path1.split('-')[0] == path2.split('-')[0]:
-                            rel_x, rel_y = cur_ms2['x'] - cur_ms1['x'], cur_ms2['y'] - cur_ms1['y']
-                            rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
-                            sp_point = split_points[path1][path2]
-                            sp_id1 = sp_point[1]
-                            sp_id2 = sp_point[2]
-                            sp_s1 = ref_frenet[path1][sp_id1]
-                            sp_s2 = ref_frenet[path2][sp_id2]
-                            s_1 = sp_s1 - cur_ms1['frenet_s']
-                            s_2 = sp_s2 - cur_ms2['frenet_s']
+                            ita_s1, ita_s2 = case_ita_s[id1][id2]
+                            s_1 = ita_s1 - cur_ms1['frenet_s']
+                            s_2 = ita_s2 - cur_ms2['frenet_s']
                             edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), s_1, s_2]
 
         if ego_id in edges.keys() and len(edges[ego_id]) == 0:
