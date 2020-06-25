@@ -88,15 +88,13 @@ if __name__ == '__main__':
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
     SR_interactions = find_all_interactions(SR_ref_path_points)
     # visualize the ref paths with background
-    # save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
-    #                          'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+    save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
+                             'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
 
     # generate intersection figures
     rotate_n = 49
-    # crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet,
-    #                       'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
-    # crop_split_figs(SR_ref_path_points, SR_split, ref_point_frenet,
-    #                 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+    crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet,
+                          'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents

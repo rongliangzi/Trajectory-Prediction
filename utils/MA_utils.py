@@ -1,6 +1,7 @@
 from utils import dataset_reader
 from utils import dict_utils
 from utils.roundabout_utils import judge_start, judge_end
+from utils.coordinate_transform import get_frenet
 import numpy as np
 import math
 import glob
@@ -67,12 +68,14 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
                 agent.motion_states[ts].x = (agent.motion_states[ts].x - x_s)
                 agent.motion_states[ts].y = (agent.motion_states[ts].y - y_s)
+            # used the transformed coordinate to judge start and end area
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
                 print(agent.track_id, 'starting or ending area is 0, drop')
                 continue
             path_name = str(start_area) + '-' + str(end_area)
+            agent.ref_path_id = path_name
             agent_path[agent.track_id] = agent
             if path_name not in trajectory:
                 trajectory[path_name] = [agent]
@@ -141,7 +144,39 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
             # nd array shape: (x,2)
             ref_paths[path_name] = np.hstack((ref_x_pts, ref_y_pts))
 
-    return ref_paths, csv_dict, rare_paths
+    return ref_paths, csv_dict
+
+
+def get_track_label(csv_data, ref_path_points, ref_frenet):
+    all_csv_dict = dict()
+    for csv_id, csv_agents in csv_data.items():
+        csv_dict = dict()
+        for agent_id, agent in csv_agents:
+            agent_dict = dict()
+            agent_dict['track_id'] = agent.track_id
+            agent_dict['time_stamp_ms_first'] = agent.time_stamp_ms_first
+            agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
+            path_name = agent_dict['ref path'] = agent.ref_path_id
+            xy_points = ref_path_points[path_name]
+            agent_dict['motion_states'] = dict()
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
+                agent_dict['motion_states'][ts] = dict()
+                agent_dict['motion_states'][ts]['time_stamp_ms'] = ms.time_stamp_ms
+                x = agent_dict['motion_states'][ts]['x'] = ms.x
+                y = agent_dict['motion_states'][ts]['y'] = ms.y
+                agent_dict['motion_states'][ts]['vx'] = ms.vx
+                agent_dict['motion_states'][ts]['vy'] = ms.vy
+                psi_rad = agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
+                f_s, f_d = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
+                agent.motion_states[ts].frenet_s = f_s
+                agent.motion_states[ts].frenet_d = f_d
+                if ts > agent.time_stamp_ms_first:
+                    vs = (f_s - agent.motion_states[ts-100].frenet_s) / 0.1
+                    agent_dict['motion_states'][ts]['vs'] = vs
+            csv_dict[agent_id] = agent_dict
+        all_csv_dict[csv_id] = csv_dict
+    return all_csv_dict
 
 
 def ln_func(coef, v):

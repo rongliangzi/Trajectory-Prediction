@@ -56,6 +56,7 @@ def nearest_c_point(p, x_list, y_list):
 
 
 def plot_start_end_area(ax, starting_area_dict, end_area_dict):
+    x = y = None
     for key, v in starting_area_dict.items():
         x = v['x']
         y = v['y']
@@ -75,19 +76,21 @@ def plot_start_end_area(ax, starting_area_dict, end_area_dict):
             ax.plot(x1, k * x1 + b3, linewidth=5)
             ax.plot(x1, k * x1 + b4, linewidth=5)
         ax.plot(stop_x, stop_y, c='g', linewidth=5, zorder=30)
-        ax.text(x[0], y[0], key, fontsize=20)
-        ax.plot(x[0:2], y[0:2], c='r', zorder=40)
-        ax.plot(x[1:3], y[1:3], c='r', zorder=40)
-        ax.plot(x[2:4], y[2:4], c='r', zorder=40)
-        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+        ax.text(x[0], y[0], key, fontsize=20, zorder=41)
+        ax.plot(x[0:2], y[0:2], c='g', zorder=40)
+        ax.plot(x[1:3], y[1:3], c='g', zorder=40)
+        ax.plot(x[2:4], y[2:4], c='g', zorder=40)
+        ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='g', zorder=40)
+    ax.plot(x[0:2], y[0:2], c='g', zorder=40, label='start')
     for key, v in end_area_dict.items():
         x = v['x']
         y = v['y']
-        ax.text(x[0], y[0], key, fontsize=20)
+        ax.text(x[0], y[0], key, fontsize=20, zorder=41)
         ax.plot(x[0:2], y[0:2], c='r', zorder=40)
         ax.plot(x[1:3], y[1:3], c='r', zorder=40)
         ax.plot(x[2:4], y[2:4], c='r', zorder=40)
         ax.plot(x[3:] + x[0:1], y[3:] + y[0:1], c='r', zorder=40)
+    ax.plot(x[0:2], y[0:2], c='r', zorder=40, label='end')
 
 
 def plot_raw_ref_path(map_file, all_points, circle_point):
@@ -118,6 +121,7 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
         plt.plot(xp, yp, linewidth=4)
     plot_start_end_area(axes, starting_area_dict, end_area_dict)
     fig.canvas.mpl_connect('button_press_event', on_press)
+    plt.legend()
     plt.show()
 
 
