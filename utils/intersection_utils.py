@@ -23,31 +23,23 @@ def find_crossing_merging_split_point(xy1, xy2, dis, th, skip):
     while i < len(min_dis) - 10:
         if min_dis[i - 10] > 0.8*th and min_dis[i + 10] > 0.8*th and\
                 0.4*th > min_dis[i]:
-            if id2[i+5] == id2[i+10]:
-                pass
-            else:
-                crossing_point = (xy1[i] + xy2[id2[i]]) / 2
-                interaction_points.append((crossing_point, i, id2[i], 'crossing_'+str(cnt)))
-                cnt += 1
-                i += skip
+            crossing_point = (xy1[i] + xy2[id2[i]]) / 2
+            interaction_points.append((crossing_point, i, id2[i], 'crossing_'+str(cnt)))
+            cnt += 1
+            i += skip
         elif min_dis[i-10] > 0.8*th and min_dis[i] < 0.5 * th \
                 and 0.5*th > min_dis[i+5] and 0.5*th > min_dis[i+10]:
-            if id2[i+5] == id2[i+10]:
-                pass
-            else:
-                merging_point = (xy1[i]+xy2[id2[i]])/2
-                interaction_points.append((merging_point, i, id2[i], 'merging_'+str(cnt)))
-                cnt += 1
-                i += skip
+
+            merging_point = (xy1[i]+xy2[id2[i]])/2
+            interaction_points.append((merging_point, i, id2[i], 'merging_'+str(cnt)))
+            cnt += 1
+            i += skip
         elif min_dis[i - 6] < th < min_dis[i + 5] and min_dis[i - 3] < th < 0.8 * min_dis[i + 10] \
                 and min_dis[i] < th:
-            if id2[i+5] == id2[i+10]:
-                pass
-            else:
-                split_point = (xy1[i] + xy2[id2[i]]) / 2
-                interaction_points.append((split_point, i, id2[i], 'split_'+str(cnt)))
-                cnt += 1
-                i += skip
+            split_point = (xy1[i] + xy2[id2[i]]) / 2
+            interaction_points.append((split_point, i, id2[i], 'split_'+str(cnt)))
+            cnt += 1
+            i += skip
         i += 1
     return interaction_points
 

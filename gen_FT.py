@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
     FT_interactions = find_all_interactions(FT_ref_path_points)
 
-    # save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
-    #                          'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
+                             'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
 
     rotate_n = 49
 

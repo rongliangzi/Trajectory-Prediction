@@ -104,20 +104,28 @@ if __name__ == '__main__':
         pickle.dump(rare_paths, pickle_file)
         pickle_file.close()
     ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
-    # csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
-    MA_interactions = find_intersection_interactions(MA_ref_path_points, th=1, skip=30)
+    if os.path.exists('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl'):
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'rb')
+        csv_data = pickle.load(pickle_file)
+        pickle_file.close()
+    else:
+        csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'wb')
+        pickle.dump(csv_data, pickle_file)
+        pickle_file.close()
+    MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30)
     # visualize the interactions with background
-    save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
-                             'D:/Dev/UCB task/intersection_figs/roundabout_MA1/')
+    # save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
+    #                          'D:/Dev/UCB task/intersection_figs/roundabout_MA/')
     # generate interaction figures
     rotate_n = 49
     # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
     #                       'D:/Dev/UCB task/intersection_figs/roundabout_MA_crop/', rotate_n)
 
-    # # save edge info
-    # for k, v in csv_data.items():
-    #     print(k)
-    #     split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
-    #     pickle.dump(split_edges, pickle_file)
-    #     pickle_file.close()
+    # save edge info
+    for k, v in csv_data.items():
+        print(k)
+        split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet)
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
+        pickle.dump(split_edges, pickle_file)
+        pickle_file.close()

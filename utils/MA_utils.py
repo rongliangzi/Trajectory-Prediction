@@ -34,17 +34,14 @@ def fit_ref_path(xy, k, beta_dict, poly_dict):
         # y_mask = y_back > 965
         # x_mask = x_back < 1075
         y_mask = y_back > 15
-        x_mask = x_back < 104
+        x_mask = x_back < 110
         mask = (x_mask.astype(np.int) + y_mask.astype(np.int)) > 1
     elif k == '12-8':
-        # mask = (y_back < 1030) & (x_back < 1075)
-        mask = (y_back < 80) & (x_back < 104)
+        mask = (y_back < 85) & (x_back < 110)
     elif k == '9-5':
-        # mask = (y_back > 968) & (y_back < 1030) & (x_back > 970) & (x_back < 1075)
-        mask = (y_back > 18) & (y_back < 80) & (x_back > -1) & (x_back < 104)
+        mask = (y_back > 18) & (y_back < 85) & (x_back > -1) & (x_back < 110)
     else:
-        # mask = (y_back > 965) & (y_back < 1030) & (x_back > 972.4) & (x_back < 1075)
-        mask = (y_back > 15) & (y_back < 80) & (x_back > 1.4) & (x_back < 104)
+        mask = (y_back > 15) & (y_back < 85) & (x_back > 1.4) & (x_back < 110)
     y_back = y_back[mask]
     x_back = x_back[mask]
 
@@ -126,7 +123,8 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
                 else:
                     xy.append([motion_state.x, motion_state.y])
         # for rare paths, use raw points and interpolation points
-        if len(v) < 2 or path_name == '6-4':
+        if path_name in ['12-10', '12-5', '6-4', '2-1', '3-15', '3-5', '6-10',
+                         '7-11', '9-11', '9-15']:
             print('rare path:', path_name)
             rare_paths.append(path_name)
             # x_points = []
@@ -188,17 +186,17 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 agent_dict['motion_states'][ts]['vy'] = ms.vy
                 psi_rad = agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
                 f_s, f_d = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
-                agent.motion_states[ts].frenet_s = f_s
-                agent.motion_states[ts].frenet_d = f_d
+                agent_dict['motion_states'][ts]['frenet_s'] = f_s
+                agent_dict['motion_states'][ts]['frenet_d'] = f_d
                 if ts > agent.time_stamp_ms_first:
-                    vs = (f_s - agent.motion_states[ts-100].frenet_s) / 0.1
+                    vs = (f_s - agent_dict['motion_states'][ts-100]['frenet_s']) / 0.1
                     agent_dict['motion_states'][ts]['vs'] = vs
             csv_dict[agent_id] = agent_dict
         all_csv_dict[csv_id] = csv_dict
     return all_csv_dict
 
 
-def find_intersection_interactions(ref_paths, th=1, skip=60):
+def find_ma_interactions(ref_paths, th=1, skip=60):
     interactions = dict()
     path_names = sorted(ref_paths.keys())
     for path_name in path_names:

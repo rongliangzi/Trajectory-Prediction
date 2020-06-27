@@ -191,9 +191,9 @@ def ref_path_completion(xp, yp, up, bottom, left, right, mode):
     b = (x2 * y1 - x1 * y2) / (x2 - x1)
     if x1 > x2:
         x = x2 - 0.2
-        while x > left:
+        while x > left-5:
             y = k * x + b
-            if y > up or y < bottom:
+            if y > up+5 or y < bottom-5:
                 break
             if mode == 'start':
                 xp = [x] + xp
@@ -211,9 +211,9 @@ def ref_path_completion(xp, yp, up, bottom, left, right, mode):
             yp = yp + [y]
     else:
         x = x2 + 0.2
-        while x < right:
+        while x < right+5:
             y = k * x + b
-            if y > up or y < bottom:
+            if y > up+5 or y < bottom-5:
                 break
             if mode == 'start':
                 xp = [x] + xp
@@ -254,12 +254,7 @@ def get_append(xp1, yp1, xps2, yps2, mode):
 def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save_dir,
                           k, ref_frenet, n, col_id=(0, 1)):
     its, first_id, second_id, label = interaction_info
-    d = 4  # fig size
-    r = 20  # range of x and y
-    dpi = 50
-    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
-    # set bg to black
-    axes.patch.set_facecolor("k")
+
     v1 = ref_paths[path1]
     frenet1 = ref_frenet[path1]
     si1 = frenet1[first_id]
@@ -274,8 +269,6 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
             end1 = i
     xp1 = [p[0] for p in v1[start1:end1]]
     yp1 = [p[1] for p in v1[start1:end1]]
-
-    lw = 2*72*d/r
     v2 = ref_paths[path2]
     frenet2 = ref_frenet[path2]
     si2 = frenet2[second_id]
@@ -290,54 +283,34 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
             end2 = i
     xp2 = [p[0] for p in v2[start2:end2]]
     yp2 = [p[1] for p in v2[start2:end2]]
-    '''
+    if (abs(xp2[0]-its[0]) > 10 or abs(yp2[0]-its[1]) > 10) and\
+            (abs(xp2[-1]-its[0]) > 10 or abs(yp2[-1]-its[1]) > 10) and\
+            (abs(xp1[0]-its[0]) > 10 or abs(yp1[0]-its[1]) > 10) and\
+            (abs(xp1[-1]-its[0]) > 10 or abs(yp1[-1]-its[1]) > 10):
+        return
+    d = 4  # fig size
+    r = 20  # range of x and y
+    dpi = 50
+    fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
+    # set bg to black
+    axes.patch.set_facecolor("k")
+    lw = 2*72*d/r
+
     # complete end part
     if abs(xp2[-1]-its[0]) < 10 and abs(yp2[-1]-its[1]) < 10:
-        # merging and the other is longer
-        end1_out = abs(xp1[-1]-its[0]) > 10 or abs(yp1[-1]-its[1]) > 10
-        if 'merging' in label and end1_out:
-            append_x, append_y = get_append(xp2[-1], yp2[-1], xp1, yp1, 'end')
-            xp2 = xp2 + append_x
-            yp2 = yp2 + append_y
-        # complete along the tangle
-        else:
-            xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
+        xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
                                            its[0] - r // 2, its[0] + r // 2, 'end')
     if abs(xp1[-1]-its[0]) < 10 and abs(yp1[-1]-its[1]) < 10:
-        # merging and the other is longer
-        end2_out = abs(xp2[-1] - its[0]) > 10 or abs(yp2[-1] - its[1]) > 10
-        if 'merging' in label and end2_out:
-            append_x, append_y = get_append(xp1[-1], yp1[-1], xp2, yp2, 'end')
-            xp1 = xp1 + append_x
-            yp1 = yp1 + append_y
-        # complete along the tangle
-        else:
-            xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
+        xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
                                            its[0] - r // 2, its[0] + r // 2, 'end')
     # complete start part
     if abs(xp2[0]-its[0]) < 10 and abs(yp2[0]-its[1]) < 10:
-        # split and the other is longer
-        start1_out = abs(xp1[0] - its[0]) > 10 or abs(yp1[0] - its[1]) > 10
-        if 'split' in label and start1_out:
-            append_x, append_y = get_append(xp2[0], yp2[0], xp1, yp1, 'start')
-            xp2 = append_x + xp2
-            yp2 = append_y + yp2
-        # complete along the tangle
-        else:
-            xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
+        xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
                                            its[0] - r // 2, its[0] + r // 2, 'start')
     if abs(xp1[0]-its[0]) < 10 and abs(yp1[0]-its[1]) < 10:
-        # split and the other is longer
-        start2_out = abs(xp2[0] - its[0]) > 10 or abs(yp2[0] - its[1]) > 10
-        if 'split' in label and start2_out:
-            append_x, append_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
-            xp1 = append_x + xp1
-            yp1 = append_y + yp1
-        # complete along the tangle
-        else:
-            xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
+        xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
                                            its[0] - r // 2, its[0] + r // 2, 'start')
-    '''
+
     # rotate randomly to augment data
     xp1, yp1 = counterclockwise_rotate(xp1, yp1, its, theta)
     xp2, yp2 = counterclockwise_rotate(xp2, yp2, its, theta)
@@ -407,7 +380,7 @@ def crop_interaction_figs(ref_paths, interactions, ref_frenet, save_dir, rotate_
 
             ita = interactions[path1][path2]
             for k, ita_info in enumerate(ita):
-                print(path1, path2)
+                print(path1, path2, k)
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
                                       save_dir, k, ref_frenet, 0, (0, 1))
                 # swap the color order
