@@ -1,6 +1,8 @@
 from utils.MA_utils import *
-from utils.roundabout_utils import plot_ref_path
-
+from utils.roundabout_utils import plot_ref_path, ref_paths2frenet, \
+    save_interaction_bg_figs, crop_interaction_figs, get_csv_edges
+import pickle
+import os
 start_areas = dict()
 start_areas[2] = dict()
 start_areas[2]['x'] = [992, 992.2, 1002.3, 1002]
@@ -74,6 +76,48 @@ if __name__ == '__main__':
     map_name = "DR_USA_Intersection_MA.osm"
     base_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/'
     dir_name = 'DR_USA_Intersection_MA/'
-    plot_ref_path(map_dir+map_name, {}, start_areas, end_areas)
-    # MA_ref_path_points = get_ref_paths(base_path, dir_name, new_start_areas,
-    #                                    new_end_areas, x_s, y_s)
+    # plot_ref_path(map_dir+map_name, {}, start_areas, end_areas)
+
+    if os.path.exists('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl') and \
+            os.path.exists('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl') and \
+            os.path.exists('D:/Dev/UCB task/pickle/MA/rare_paths.pkl'):
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl', 'rb')
+        MA_ref_path_points = pickle.load(pickle_file)
+        pickle_file.close()
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'rb')
+        csv_dict = pickle.load(pickle_file)
+        pickle_file.close()
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/rare_paths.pkl', 'rb')
+        rare_paths = pickle.load(pickle_file)
+        pickle_file.close()
+    else:
+        # MA_ref_path_points: (x,2) array
+        MA_ref_path_points, csv_dict, rare_paths = get_ref_paths(base_path, dir_name, new_start_areas,
+                                                                 new_end_areas, x_s, y_s, save_img=True)
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl', 'wb')
+        pickle.dump(MA_ref_path_points, pickle_file)
+        pickle_file.close()
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'wb')
+        pickle.dump(csv_dict, pickle_file)
+        pickle_file.close()
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/rare_paths.pkl', 'wb')
+        pickle.dump(rare_paths, pickle_file)
+        pickle_file.close()
+    ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
+    # csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
+    MA_interactions = find_intersection_interactions(MA_ref_path_points, th=1, skip=30)
+    # visualize the interactions with background
+    save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
+                             'D:/Dev/UCB task/intersection_figs/roundabout_MA1/')
+    # generate interaction figures
+    rotate_n = 49
+    # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
+    #                       'D:/Dev/UCB task/intersection_figs/roundabout_MA_crop/', rotate_n)
+
+    # # save edge info
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

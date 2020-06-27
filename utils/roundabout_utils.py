@@ -125,7 +125,7 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
     plt.show()
 
 
-def find_all_interactions(ref_paths):
+def find_all_interactions(ref_paths, th=0.6, skip=20):
     interactions = dict()
     path_names = sorted(ref_paths.keys())
     for path_name in path_names:
@@ -133,7 +133,7 @@ def find_all_interactions(ref_paths):
     for i, path1 in enumerate(path_names):
         for j in range(i+1, len(path_names)):
             path2 = path_names[j]
-            interaction12, interaction21 = find_interaction(ref_paths[path1], ref_paths[path2])
+            interaction12, interaction21 = find_interaction(ref_paths[path1], ref_paths[path2], th, skip)
             if interaction12 is not None and len(interaction12) > 0:
                 # interaction of path1 and path2 exists
                 interactions[path1][path2] = interaction12
@@ -177,7 +177,7 @@ def save_interaction_bg_figs(ref_paths, interactions, map_file, save_dir):
                 plt.savefig(save_dir+'{}_{}_{}.png'.format(path1, path2, str(k)))
                 plt.close()
                 fig_n += 1
-                print(fig_n)
+                print(path1, path2, fig_n)
 
 
 def ref_path_completion(xp, yp, up, bottom, left, right, mode):
@@ -290,7 +290,7 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
             end2 = i
     xp2 = [p[0] for p in v2[start2:end2]]
     yp2 = [p[1] for p in v2[start2:end2]]
-
+    '''
     # complete end part
     if abs(xp2[-1]-its[0]) < 10 and abs(yp2[-1]-its[1]) < 10:
         # merging and the other is longer
@@ -337,24 +337,47 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
         else:
             xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
                                            its[0] - r // 2, its[0] + r // 2, 'start')
+    '''
     # rotate randomly to augment data
     xp1, yp1 = counterclockwise_rotate(xp1, yp1, its, theta)
     xp2, yp2 = counterclockwise_rotate(xp2, yp2, its, theta)
     if 'cross' in label:
-        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1))
-        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1), zorder=5)
-        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1))
-        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1), zorder=5)
+        if n % 2 == 0:
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1))
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1), zorder=5)
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1))
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1), zorder=5)
+        else:
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1),
+                     zorder=5)
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1))
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1),
+                     zorder=5)
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1))
     elif 'merging' in label:
-        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1))
-        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1), zorder=5)
-        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0.5, 1, 1))
-        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(0.5, 1, 1), zorder=5)
+        if n % 2 == 0:
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1))
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1), zorder=5)
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0.5, 1, 1))
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(0.5, 1, 1), zorder=5)
+        else:
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1),
+                     zorder=5)
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(col_id[1], 0, 1))
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(0.5, 1, 1), zorder=5)
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(0.5, 1, 1))
     elif 'split' in label:
-        plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1))
-        plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1), zorder=5)
-        plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0.5, 0, 1))
-        plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(0.5, 0, 1), zorder=5)
+        if n % 2 == 0:
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1))
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1), zorder=5)
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0.5, 0, 1))
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(0.5, 0, 1), zorder=5)
+        else:
+            plt.plot(xp1[first_id - start1:], yp1[first_id - start1:], linewidth=lw, color=(col_id[0], 1, 1),
+                     zorder=5)
+            plt.plot(xp2[second_id - start2:], yp2[second_id - start2:], linewidth=lw, color=(col_id[1], 1, 1))
+            plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(0.5, 0, 1), zorder=5)
+            plt.plot(xp2[:second_id - start2], yp2[:second_id - start2], linewidth=lw, color=(0.5, 0, 1))
     # set x y range
     plt.xlim(its[0] - r // 2, its[0] + r // 2)
     plt.ylim(its[1] - r // 2, its[1] + r // 2)
@@ -387,17 +410,28 @@ def crop_interaction_figs(ref_paths, interactions, ref_frenet, save_dir, rotate_
                 print(path1, path2)
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
                                       save_dir, k, ref_frenet, 0, (0, 1))
+                # swap the color order
+                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
+                                      save_dir, k, ref_frenet, 1, (0, 1))
                 # swap the colors
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
-                                      save_dir, k, ref_frenet, 1, (1, 0))
+                                      save_dir, k, ref_frenet, 2, (1, 0))
+
+                # swap the colors
+                rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
+                                      save_dir, k, ref_frenet, 3, (1, 0))
                 for r_n in range(rotate_n):
                     theta = random.random() * 2 * math.pi
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 2*(r_n+1), (0, 1))
+                                          save_dir, k, ref_frenet, 4*(r_n+1), (0, 1))
+                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
+                                          save_dir, k, ref_frenet, 4 * (r_n + 1)+1, (0, 1))
                     # swap the colors
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 2*(r_n+1)+1, (1, 0))
-                count += (1+rotate_n)*2
+                                          save_dir, k, ref_frenet, 4*(r_n+1)+2, (1, 0))
+                    rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
+                                          save_dir, k, ref_frenet, 4 * (r_n + 1) + 3, (1, 0))
+                count += (1+rotate_n)*4
                 print(count)
     return
 
@@ -482,27 +516,29 @@ def judge_point_side(p1, p2, p3, p4):
 
 
 def judge_start(track, areas):
-    # judge if in some starting area frame by frame
+    # judge if in some starting area in first 1/4 trajectory frame by frame
+    start = 0
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
-        motion_state = track['motion_states'][ts]
-        cur_p = (motion_state['x'], motion_state['y'])
+        motion_state = track.motion_states[ts]
+        cur_p = (motion_state.x, motion_state.y)
         for k, v in areas.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
-                return k
-    return 0
+                start = k
+    return start
 
 
 def judge_end(track, areas):
     # judge if in some starting area frame by frame
+    end = 0
     for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
-        motion_state = track['motion_states'][ts]
-        cur_p = (motion_state['x'], motion_state['y'])
+        motion_state = track.motion_states[ts]
+        cur_p = (motion_state.x, motion_state.y)
         for k, v in areas.items():
             in_box = judge_in_box(v['x'], v['y'], cur_p)
             if in_box == 1:
-                return k
-    return 0
+                end = k
+    return end
 
 
 # transform points in a ref path to frenet coordinate
@@ -541,7 +577,7 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
-                print(agent.track_id, 'starting or ending area is 0, drop')
+                print(agent.track_id, 'starting or ending area is 0, discard')
                 continue
             path_name = str(start_area) + '-' + str(end_area)
             if path_name not in ref_path_points:

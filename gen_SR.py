@@ -88,8 +88,8 @@ if __name__ == '__main__':
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
     SR_interactions = find_all_interactions(SR_ref_path_points)
     # visualize the ref paths with background
-    save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
-                             'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+    # save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
+    #                          'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
 
     # generate intersection figures
     rotate_n = 49
@@ -110,9 +110,9 @@ if __name__ == '__main__':
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
     # save edge info
-    for k, v in csv_data.items():
-        print(k)
-        split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet)
-        pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

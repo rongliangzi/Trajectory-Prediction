@@ -12,7 +12,7 @@ def cal_dis(x, y):
     return dis
 
 
-def find_crossing_merging_split_point(xy1, xy2, dis, th=0.6):
+def find_crossing_merging_split_point(xy1, xy2, dis, th, skip):
     # minimum distance of each row
     min_dis = dis.min(axis=1)
     # id of y for minimum distance of each row
@@ -23,32 +23,128 @@ def find_crossing_merging_split_point(xy1, xy2, dis, th=0.6):
     while i < len(min_dis) - 10:
         if min_dis[i - 10] > 0.8*th and min_dis[i + 10] > 0.8*th and\
                 0.4*th > min_dis[i]:
-            crossing_point = (xy1[i] + xy2[id2[i]]) / 2
-            interaction_points.append((crossing_point, i, id2[i], 'crossing_'+str(cnt)))
-            cnt += 1
-            i += 20
+            if id2[i+5] == id2[i+10]:
+                pass
+            else:
+                crossing_point = (xy1[i] + xy2[id2[i]]) / 2
+                interaction_points.append((crossing_point, i, id2[i], 'crossing_'+str(cnt)))
+                cnt += 1
+                i += skip
         elif min_dis[i-10] > 0.8*th and min_dis[i] < 0.5 * th \
                 and 0.5*th > min_dis[i+5] and 0.5*th > min_dis[i+10]:
-            merging_point = (xy1[i]+xy2[id2[i]])/2
-            interaction_points.append((merging_point, i, id2[i], 'merging_'+str(cnt)))
-            cnt += 1
-            i += 20
+            if id2[i+5] == id2[i+10]:
+                pass
+            else:
+                merging_point = (xy1[i]+xy2[id2[i]])/2
+                interaction_points.append((merging_point, i, id2[i], 'merging_'+str(cnt)))
+                cnt += 1
+                i += skip
         elif min_dis[i - 6] < th < min_dis[i + 5] and min_dis[i - 3] < th < 0.8 * min_dis[i + 10] \
                 and min_dis[i] < th:
-            split_point = (xy1[i] + xy2[id2[i]]) / 2
-            interaction_points.append((split_point, i, id2[i], 'split_'+str(cnt)))
-            cnt += 1
-            i += 20
+            if id2[i+5] == id2[i+10]:
+                pass
+            else:
+                split_point = (xy1[i] + xy2[id2[i]]) / 2
+                interaction_points.append((split_point, i, id2[i], 'split_'+str(cnt)))
+                cnt += 1
+                i += skip
         i += 1
     return interaction_points
 
 
-def find_interaction(xy1, xy2, dis_th=2):
+def find_interaction(xy1, xy2, th, skip, dis_th=2):
     dis = cal_dis(xy1, xy2)
     min_dis = dis.min()
     if min_dis > dis_th:
         # no intersection point
         return None, None
-    interaction12 = find_crossing_merging_split_point(xy1, xy2, dis)
+    interaction12 = find_crossing_merging_split_point(xy1, xy2, dis, th, skip)
     interaction21 = [(m[0], m[2], m[1], m[3]) for m in interaction12]
     return interaction12, interaction21
+
+
+def find_intersection_ita(path1, path2, xy1, xy2, th, skip, dis_th=2, m=1.5, k=-1):
+    dis = cal_dis(xy1, xy2)
+    min_dis = dis.min()
+    if min_dis > dis_th:
+        # no intersection point
+        return None, None
+    if path1.split('-')[0] == path2.split('-')[0]:
+        interaction12 = find_intersection_split(xy1, xy2, dis, th, skip, k)
+    elif path1.split('-')[-1] == path2.split('-')[-1]:
+        interaction12 = find_intersection_merging(xy1, xy2, dis, th, skip, m, k)
+    else:
+        interaction12 = find_intersection_crossing(xy1, xy2, dis, th, skip, k)
+    interaction21 = [(m[0], m[2], m[1], m[3]) for m in interaction12]
+    return interaction12, interaction21
+
+
+def find_intersection_crossing(xy1, xy2, dis, th, skip, k=-1):
+    # minimum distance of each row
+    min_dis = dis.min(axis=1)
+    # id of y for minimum distance of each row
+    id2 = np.argmin(dis, axis=1)
+    if k == -1:
+        k = 20
+    i = k
+    crossing_points = []
+    cnt = 0
+    while i < len(min_dis) - k:
+        if min_dis[i - k] > 0.6*th and min_dis[i + k] > 0.6*th and\
+                0.4*th > min_dis[i]:
+            crossing_point = (xy1[i] + xy2[id2[i]]) / 2
+            crossing_points.append((crossing_point, i, id2[i], 'crossing_'+str(cnt)))
+            cnt += 1
+            i += skip
+            return crossing_points
+        i += 1
+    return crossing_points
+
+
+def find_intersection_merging(xy1, xy2, dis, th, skip, m=1.5, k=-1):
+    # minimum distance of each row
+    min_dis = dis.min(axis=1)
+    # id of y for minimum distance of each row
+    id2 = np.argmin(dis, axis=1)
+    if k == -1:
+        k = 10
+    i = k
+    merging_points = []
+    cnt = 0
+    while i < len(min_dis) - k:
+        if min_dis[i - k] > m*0.4 * th and min_dis[i] < 0.4 * th \
+                and 0.4 * th > min_dis[i + k]:
+            if id2[i-k] == id2[i-k//2] or id2[i+k//2] == id2[i+k]:
+                pass
+            else:
+                merging_point = (xy1[i] + xy2[id2[i]]) / 2
+                merging_points.append((merging_point, i, id2[i], 'merging_' + str(cnt)))
+                cnt += 1
+                i += skip
+                return merging_points
+        i += 1
+    return merging_points
+
+
+def find_intersection_split(xy1, xy2, dis, th, skip, k=-1):
+    # minimum distance of each row
+    min_dis = dis.min(axis=1)
+    # id of y for minimum distance of each row
+    id2 = np.argmin(dis, axis=1)
+    if k == -1:
+        k = 5
+    i = k
+    split_points = []
+    cnt = 0
+    while i < len(min_dis)-2*k:
+        if min_dis[i] < th < min_dis[i + k] and min_dis[i - 3] < th < 0.8 * min_dis[i + 2*k]:
+            if id2[i-k] == id2[i-k*2] or id2[i+k*2] == id2[i+k]:
+                pass
+            else:
+                split_point = (xy1[i] + xy2[id2[i]]) / 2
+                split_points.append((split_point, i, id2[i], 'split_' + str(cnt)))
+                cnt += 1
+                i += skip
+                return split_points
+        i += 1
+    return split_points

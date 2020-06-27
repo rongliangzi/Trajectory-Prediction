@@ -2,12 +2,15 @@ from utils import dataset_reader
 from utils import dict_utils
 from utils.roundabout_utils import judge_start, judge_end
 from utils.coordinate_transform import get_frenet
+from utils import map_vis_without_lanelet
+from utils.intersection_utils import find_intersection_ita
 import numpy as np
 import math
 import glob
 import os
 import random
 import csv
+import matplotlib.pyplot as plt
 
 
 def fit_ref_path(xy, k, beta_dict, poly_dict):
@@ -29,31 +32,32 @@ def fit_ref_path(xy, k, beta_dict, poly_dict):
     # mask far away points
     if k == '7-8':
         # y_mask = y_back > 965
-        # x_mask = x_back < 1080
-        y_mask = y_back > 75
-        x_mask = x_back < 595
+        # x_mask = x_back < 1075
+        y_mask = y_back > 15
+        x_mask = x_back < 104
         mask = (x_mask.astype(np.int) + y_mask.astype(np.int)) > 1
     elif k == '12-8':
-        # mask = (y_back < 1035) & (x_back < 1090)
-        mask = (y_back < 425) & (x_back < 595)
+        # mask = (y_back < 1030) & (x_back < 1075)
+        mask = (y_back < 80) & (x_back < 104)
     elif k == '9-5':
-        # mask = (y_back > 968) & (y_back < 1035) & (x_back > 970) & (x_back < 1090)
-        mask = (y_back > 90) & (y_back < 425) & (x_back > -1) & (x_back < 595)
+        # mask = (y_back > 968) & (y_back < 1030) & (x_back > 970) & (x_back < 1075)
+        mask = (y_back > 18) & (y_back < 80) & (x_back > -1) & (x_back < 104)
     else:
-        # mask = (y_back > 965) & (y_back < 1035) & (x_back > 972.4) & (x_back < 1090)
-        mask = (y_back > 75) & (y_back < 425) & (x_back > 7) & (x_back < 595)
+        # mask = (y_back > 965) & (y_back < 1030) & (x_back > 972.4) & (x_back < 1075)
+        mask = (y_back > 15) & (y_back < 80) & (x_back > 1.4) & (x_back < 104)
     y_back = y_back[mask]
     x_back = x_back[mask]
 
     # reverse the direction
-    if k in ['6-1', '7-10', '9-1', '9-4', '9-5', '9-10', '6-4', '7-11', '6-10', '6-11', '9-11', '13-4', '14-1', '12-5']:
+    if k in ['6-1', '7-10', '9-1', '9-4', '9-5', '9-10', '6-4', '7-11', '6-10', '6-11',
+             '9-11', '13-4', '14-1', '12-5', '6-5']:
         x_back = x_back[::-1]
         y_back = y_back[::-1]
 
     return x_back, y_back
 
 
-def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
+def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save_img=False):
     trajectory = dict()
     csv_dict = dict()
     # collect data to construct a dict from all csv files
@@ -72,14 +76,14 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
-                print(agent.track_id, 'starting or ending area is 0, drop')
+                print(agent.track_id, 'starting or ending area is 0, discard')
                 continue
             path_name = str(start_area) + '-' + str(end_area)
             agent.ref_path_id = path_name
             agent_path[agent.track_id] = agent
             if path_name not in trajectory:
                 trajectory[path_name] = [agent]
-            elif path_name not in ['12-10', '13-10', '14-10']:
+            elif path_name not in ['12-10', '13-10', '14-10', '2-1']:
                 trajectory[path_name].append(agent)
         csv_dict[csv_name[-7:-4]] = agent_path
     ref_paths = dict()
@@ -89,19 +93,18 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
                  '7-10': 0, '2-8': 0, '3-8': 0, '9-1': 0, '12-5': math.pi / 5, '13-8': -math.pi / 4,
                  '14-1': math.pi / 4, '14-15': -math.pi / 6, '13-4': math.pi / 5, '14-5': math.pi / 4,
                  '12-10': math.pi / 12, '7-11': -math.pi / 6, '9-11': -math.pi / 6, '13-10': math.pi / 12,
-                 '2-4': -math.pi / 6, '3-5': -math.pi / 6, '6-10': -math.pi / 6, '6-4': 0}
+                 '2-4': -math.pi / 6, '3-5': -math.pi / 6, '6-10': -math.pi / 6, '6-4': 0, '6-5': 0,
+                 '3-15': -math.pi / 6}
     poly_dict = {'7-8': 5, '12-8': 6, '2-10': 6, '2-11': 6, '6-1': 6, '3-4': 6, '9-4': 7, '9-5': 7,
                  '9-10': 4, '13-5': 1, '14-4': 1, '6-11': 3, '7-10': 1, '2-8': 4, '3-8': 4, '9-1': 4,
                  '12-5': 3, '13-8': 4, '14-1': 5, '14-15': 1, '13-4': 3, '14-5': 6, '12-10': 4, '7-11': 4,
-                 '9-11': 4, '13-10': 6, '2-4': 4, '3-5': 4, '6-10': 4, '6-4': 6}
-    # for trajectories in one ref path
+                 '9-11': 4, '13-10': 6, '2-4': 4, '3-5': 4, '6-10': 4, '6-4': 6, '6-5': 6, '3-15': 4}
     rare_paths = []
+    # for trajectories in one ref path
     for ref_i, (path_name, v) in enumerate(sorted(trajectory.items())):
         xy = []
-        path_w = []
         # save all (x,y) points in xy
         for track in v:
-            path_w.append(track.width)
             for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
                 motion_state = track.motion_states[ts]
                 if (path_name == '12-8' and motion_state.x < 1015-x_s) \
@@ -123,7 +126,7 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
                 else:
                     xy.append([motion_state.x, motion_state.y])
         # for rare paths, use raw points and interpolation points
-        if len(v) < 2:
+        if len(v) < 2 or path_name == '6-4':
             print('rare path:', path_name)
             rare_paths.append(path_name)
             # x_points = []
@@ -141,22 +144,38 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s):
             ref_x_pts, ref_y_pts = fit_ref_path(xy, path_name, beta_dict, poly_dict)
             ref_x_pts += x_s
             ref_y_pts += y_s
+            ref_x_pts = ref_x_pts.reshape(len(ref_x_pts), 1)
+            ref_y_pts = ref_y_pts.reshape(len(ref_y_pts), 1)
             # nd array shape: (x,2)
             ref_paths[path_name] = np.hstack((ref_x_pts, ref_y_pts))
+            if save_img:
+                fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
+                map_file = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Intersection_MA.osm'
+                map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
+                plt.scatter([xy_[0]+x_s for xy_ in xy], [xy_[1]+y_s for xy_ in xy], s=1)
+                plt.plot(ref_x_pts, ref_y_pts, linewidth=6, color='b', alpha=0.5)
+                plt.text(min(ref_x_pts[0], 1084), ref_y_pts[0], 'start', zorder=30, fontsize=30)
+                plt.text(min(ref_x_pts[-1], 1084), ref_y_pts[-1], 'end', zorder=30, fontsize=30)
+                plt.savefig('D:/Dev/UCB task/path_imgs/MA/{}.png'.format(path_name))
+                plt.close()
 
-    return ref_paths, csv_dict
+    return ref_paths, csv_dict, rare_paths
 
 
-def get_track_label(csv_data, ref_path_points, ref_frenet):
+def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
     all_csv_dict = dict()
     for csv_id, csv_agents in csv_data.items():
+        print(csv_id)
         csv_dict = dict()
-        for agent_id, agent in csv_agents:
+        for agent_id, agent in csv_agents.items():
+            path_name = agent.ref_path_id
+            if path_name in rare_paths:
+                continue
             agent_dict = dict()
             agent_dict['track_id'] = agent.track_id
             agent_dict['time_stamp_ms_first'] = agent.time_stamp_ms_first
             agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
-            path_name = agent_dict['ref path'] = agent.ref_path_id
+            agent_dict['ref path'] = path_name
             xy_points = ref_path_points[path_name]
             agent_dict['motion_states'] = dict()
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
@@ -179,6 +198,43 @@ def get_track_label(csv_data, ref_path_points, ref_frenet):
     return all_csv_dict
 
 
+def find_intersection_interactions(ref_paths, th=1, skip=60):
+    interactions = dict()
+    path_names = sorted(ref_paths.keys())
+    for path_name in path_names:
+        interactions[path_name] = dict()
+    for i, path1 in enumerate(path_names):
+        # if path1!='13-8':
+        #     continue
+        for j in range(i+1, len(path_names)):
+            path2 = path_names[j]
+            # if path2!='3-8':
+            #     continue
+            if path1 == '2-8':
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], 1.5, skip, m=1.1)
+            elif path1 == '7-10':
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], 1.5, skip, m=1.1, k=2)
+            elif path1 == '7-11' and path2 == '7-8':
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], 20, skip, dis_th=6, m=1.2, k=4)
+            elif path1 == '12-8' and path2 == '3-8':
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], 1.5, skip, m=1.2)
+            elif path1 == '13-8' and path2 == '3-8':
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], 1.5, skip, m=1.2)
+            else:
+                ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
+                                                     ref_paths[path2], th, skip)
+            if ita12 is not None and len(ita12) > 0:
+                # interaction of path1 and path2 exists
+                interactions[path1][path2] = ita12
+                interactions[path2][path1] = ita21
+    return interactions
+
+
 def ln_func(coef, v):
     assert len(coef) == 4, 'coef must have length 4, but has {}'.format(len(coef))
     result = (coef[0] + coef[1] * np.log(coef[2] * v - coef[3]))
@@ -197,8 +253,8 @@ def get_defined_ref_paths(defined_file, csv_dir, x_start, y_start):
         for agent in tracks:
             # transform the coordinate
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
-                agent.motion_states[ts].x = (agent.motion_states[ts].x - x_start) * rate
-                agent.motion_states[ts].y = (agent.motion_states[ts].y - y_start) * rate
+                agent.motion_states[ts].x = (agent.motion_states[ts].x - x_start)
+                agent.motion_states[ts].y = (agent.motion_states[ts].y - y_start)
             agent_path[agent.track_id] = agent
         csv_dict[csv_name[-7:-4]] = agent_path
     ref_paths = dict()
