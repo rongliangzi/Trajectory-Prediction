@@ -182,11 +182,11 @@ def save_interaction_bg_figs(ref_paths, interactions, map_file, save_dir):
 
 def ref_path_completion(xp, yp, up, bottom, left, right, mode):
     if mode == 'start':
-        x2, x1 = xp[0:2]
-        y2, y1 = yp[0:2]
+        x2, x1 = xp[0], xp[2]
+        y2, y1 = yp[0], yp[2]
     else:
-        x1, x2 = xp[-2:]
-        y1, y2 = yp[-2:]
+        x1, x2 = xp[-3], xp[-1]
+        y1, y2 = yp[-3], yp[-1]
     k = (y2 - y1) / (x2 - x1)
     b = (x2 * y1 - x1 * y2) / (x2 - x1)
     if x1 > x2:
@@ -252,10 +252,11 @@ def get_append(xp1, yp1, xps2, yps2, mode):
 
 
 def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save_dir,
-                          k, ref_frenet, n, col_id=(0, 1)):
+                          k, ref_frenet, n, save_name=None, col_id=(0, 1)):
     its, first_id, second_id, label = interaction_info
 
     v1 = ref_paths[path1]
+    v2 = ref_paths[path2]
     frenet1 = ref_frenet[path1]
     si1 = frenet1[first_id]
     start1 = 0
@@ -269,7 +270,7 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
             end1 = i
     xp1 = [p[0] for p in v1[start1:end1]]
     yp1 = [p[1] for p in v1[start1:end1]]
-    v2 = ref_paths[path2]
+
     frenet2 = ref_frenet[path2]
     si2 = frenet2[second_id]
     start2 = 0
@@ -283,33 +284,34 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
             end2 = i
     xp2 = [p[0] for p in v2[start2:end2]]
     yp2 = [p[1] for p in v2[start2:end2]]
-    if (abs(xp2[0]-its[0]) > 10 or abs(yp2[0]-its[1]) > 10) and\
-            (abs(xp2[-1]-its[0]) > 10 or abs(yp2[-1]-its[1]) > 10) and\
-            (abs(xp1[0]-its[0]) > 10 or abs(yp1[0]-its[1]) > 10) and\
-            (abs(xp1[-1]-its[0]) > 10 or abs(yp1[-1]-its[1]) > 10):
-        return
-    d = 4  # fig size
-    r = 20  # range of x and y
-    dpi = 50
+
+    d = 6  # fig size
+    r = 30  # range of x and y
+    dpi = 8
     fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
     # set bg to black
     axes.patch.set_facecolor("k")
-    lw = 2*72*d/r
-
+    lw = 0.8*72*d/r
+    # circle = patches.Circle(its, 2, color='r', zorder=10)
+    # axes.add_patch(circle)
     # complete end part
-    if abs(xp2[-1]-its[0]) < 10 and abs(yp2[-1]-its[1]) < 10:
-        xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
-                                           its[0] - r // 2, its[0] + r // 2, 'end')
-    if abs(xp1[-1]-its[0]) < 10 and abs(yp1[-1]-its[1]) < 10:
+    if abs(xp2[-1]-its[0]) < r/2 and abs(yp2[-1]-its[1]) < r/2:
+        xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r / 2, its[1] - r / 2,
+                                       its[0] - r / 2, its[0] + r / 2, 'end')
+    if abs(xp1[-1]-its[0]) < r/2 and abs(yp1[-1]-its[1]) < r/2:
         xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
-                                           its[0] - r // 2, its[0] + r // 2, 'end')
+                                       its[0] - r / 2, its[0] + r / 2, 'end')
     # complete start part
-    if abs(xp2[0]-its[0]) < 10 and abs(yp2[0]-its[1]) < 10:
-        xp2, yp2 = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
-                                           its[0] - r // 2, its[0] + r // 2, 'start')
-    if abs(xp1[0]-its[0]) < 10 and abs(yp1[0]-its[1]) < 10:
-        xp1, yp1 = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
-                                           its[0] - r // 2, its[0] + r // 2, 'start')
+    if abs(xp2[0]-its[0]) < r/2 and abs(yp2[0]-its[1]) < r/2:
+        xp2n, yp2n = ref_path_completion(xp2, yp2, its[1] + r // 2, its[1] - r // 2,
+                                       its[0] - r / 2, its[0] + r / 2, 'start')
+        second_id += len(xp2n) - len(xp2)
+        xp2, yp2 = xp2n, yp2n
+    if abs(xp1[0]-its[0]) < r/2 and abs(yp1[0]-its[1]) < r/2:
+        xp1n, yp1n = ref_path_completion(xp1, yp1, its[1] + r // 2, its[1] - r // 2,
+                                       its[0] - r / 2, its[0] + r / 2, 'start')
+        first_id += len(xp1n) - len(xp1)
+        xp1, yp1 = xp1n, yp1n
 
     # rotate randomly to augment data
     xp1, yp1 = counterclockwise_rotate(xp1, yp1, its, theta)
@@ -362,7 +364,9 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
     plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
     plt.margins(0, 0)
-    plt.savefig(save_dir + '{}_{}_{}_{}.png'.format(path1, path2, k, n))
+    if save_name is None:
+        save_name = '{}_{}_{}_{}.png'.format(path1, path2, k, n)
+    plt.savefig(save_dir + save_name)
     plt.close()
 
 
@@ -377,33 +381,32 @@ def crop_interaction_figs(ref_paths, interactions, ref_frenet, save_dir, rotate_
             path2 = keys[j]
             if path2 not in interactions[path1].keys():
                 continue
-
             ita = interactions[path1][path2]
             for k, ita_info in enumerate(ita):
                 print(path1, path2, k)
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
-                                      save_dir, k, ref_frenet, 0, (0, 1))
+                                      save_dir, k, ref_frenet, 0, col_id=(0, 1))
                 # swap the color order
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
-                                      save_dir, k, ref_frenet, 1, (0, 1))
+                                      save_dir, k, ref_frenet, 1, col_id=(0, 1))
                 # swap the colors
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
-                                      save_dir, k, ref_frenet, 2, (1, 0))
+                                      save_dir, k, ref_frenet, 2, col_id=(1, 0))
 
                 # swap the colors
                 rotate_crop_2path_fig(ref_paths, path1, path2, 0.0, ita_info,
-                                      save_dir, k, ref_frenet, 3, (1, 0))
+                                      save_dir, k, ref_frenet, 3, col_id=(1, 0))
                 for r_n in range(rotate_n):
                     theta = random.random() * 2 * math.pi
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 4*(r_n+1), (0, 1))
+                                          save_dir, k, ref_frenet, 4*(r_n+1), col_id=(0, 1))
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 4 * (r_n + 1)+1, (0, 1))
+                                          save_dir, k, ref_frenet, 4 * (r_n + 1)+1, col_id=(0, 1))
                     # swap the colors
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 4*(r_n+1)+2, (1, 0))
+                                          save_dir, k, ref_frenet, 4*(r_n+1)+2, col_id=(1, 0))
                     rotate_crop_2path_fig(ref_paths, path1, path2, theta, ita_info,
-                                          save_dir, k, ref_frenet, 4 * (r_n + 1) + 3, (1, 0))
+                                          save_dir, k, ref_frenet, 4 * (r_n + 1) + 3, col_id=(1, 0))
                 count += (1+rotate_n)*4
                 print(count)
     return
@@ -605,18 +608,50 @@ def save_all_edges(csv_dict, is_info, ref_frenet):
     all_edges = dict()
     for i, c_data in csv_dict.items():
         # get edge info in one csv file
-        edges = get_csv_edges(c_data, is_info, ref_frenet)
+        edges = get_csv_edges(c_data, is_info, ref_frenet, i)
         all_edges[i] = edges
         print(i, ': ', len(edges), '/', len(c_data))
     return all_edges
 
 
-def get_csv_edges(c_data, ita_info, ref_frenet):
+def save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2, theta1,
+                    cls_id, ref_frenet, img_name1):
+    if not os.path.exists(img_dir):
+        os.mkdir(img_dir)
+        print('make dir: ', img_dir)
+    if not os.path.exists(img_path):
+        rotate_crop_2path_fig(ref_paths, path1, path2, theta1, ita1, img_dir, cls_id,
+                              ref_frenet, 0, img_name1, (0, 1))
+    if not os.path.exists(img_path.replace('0.', '1.')):
+        rotate_crop_2path_fig(ref_paths, path1, path2, theta1, ita1, img_dir, cls_id,
+                              ref_frenet, 1, img_name1.replace('0.', '1.'), (0, 1))
+    if not os.path.exists(img_path.replace('0.', '2.')):
+        rotate_crop_2path_fig(ref_paths, path1, path2, theta1, ita1, img_dir, cls_id,
+                              ref_frenet, 2, img_name1.replace('0.', '2.'), (1, 0))
+    if not os.path.exists(img_path.replace('0.', '3.')):
+        rotate_crop_2path_fig(ref_paths, path1, path2, theta1, ita1, img_dir, cls_id,
+                              ref_frenet, 3, img_name1.replace('0.', '3.'), (1, 0))
+        # ita2 = ita_info[path2][path1][cls_id]
+        # theta2 = math.pi/2 - cur_ms2['psi_rad']
+        # img_name2 = '{}_{}_{}_{}.png'.format(csv_key, id2, id1, cur_ts)
+        # rotate_crop_2path_fig(ref_paths, path2, path1, theta2, ita2, img_dir,
+        #                       cls_id, ref_frenet, 0, img_name2, col_id=(0, 1))
+        # rotate_crop_2path_fig(ref_paths, path2, path1, theta2, ita2, img_dir,
+        #                       cls_id, ref_frenet, 1, img_name2, col_id=(0, 1))
+        # rotate_crop_2path_fig(ref_paths, path2, path1, theta2, ita2, img_dir,
+        #                       cls_id, ref_frenet, 2, img_name2, col_id=(1, 0))
+        # rotate_crop_2path_fig(ref_paths, path2, path1, theta2, ita2, img_dir,
+        #                       cls_id, ref_frenet, 3, img_name2, col_id=(1, 0))
+
+
+def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
     edges = dict()
     for ego_id, ego_data in c_data.items():
+        print(ego_id)
         # if in starting area and have at least 69 frames behind,
         # save ref path image and trajectory data
         ego_path = ego_data['ref path']
+
         for start_ts in range(ego_data['time_stamp_ms_first'],
                               ego_data['time_stamp_ms_last'] - 68 * 100, 100):
             # ego_start_ms = ego_track['motion_states'][start_ts]
@@ -730,8 +765,8 @@ def get_csv_edges(c_data, ita_info, ref_frenet):
             if len(edges[ego_id][start_ts]['agents']) < 2:
                 del edges[ego_id][start_ts]
                 continue
-            for agent_id in edges[ego_id][start_ts]['agents']:
-                edges[ego_id][start_ts]['xy'][agent_id] = get_70_coor(c_data[agent_id], start_ts)
+            # for agent_id in edges[ego_id][start_ts]['agents']:
+            #     edges[ego_id][start_ts]['xy'][agent_id] = get_70_coor(c_data[agent_id], start_ts)
 
             # save relative x/y, frenet s to intersection/splitting point or delta s
             for cur_ts in range(start_ts, start_ts + 70 * 100, 100):
@@ -755,19 +790,52 @@ def get_csv_edges(c_data, ita_info, ref_frenet):
                             continue
                         cur_ms2 = c_data[id2]['motion_states'][cur_ts]
                         path2 = c_data[id2]['ref path']
+
+                        # save interaction info of car1 and car2
                         if path1 == path2:
                             rel_x, rel_y = cur_ms2['x']-cur_ms1['x'], cur_ms2['y']-cur_ms1['y']
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
                             delta_s = cur_ms2['frenet_s'] - cur_ms1['frenet_s']
                             edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), delta_s]
+
                         elif id1 in case_ita_s.keys() and id2 in case_ita_s[id1].keys():
                             rel_x, rel_y = cur_ms2['x'] - cur_ms1['x'], cur_ms2['y'] - cur_ms1['y']
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
                             ita_s1, ita_s2 = case_ita_s[id1][id2]
                             s_1 = ita_s1 - cur_ms1['frenet_s']
                             s_2 = ita_s2 - cur_ms2['frenet_s']
-                            edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), s_1, s_2]
-
+                            edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), s_1, s_2, theta1]
+                            # cls_id = edges[ego_id][start_ts]['ita_id'][id1][id2]
+                            # ita1 = ita_info[path1][path2][cls_id]
+                            # img_name1 = '{}_{}_{}_{}_{}_0.png'.format(csv_key, id1, id2, cur_ts, cls_id)
+                            # img_path = img_dir + img_name1
+                            # save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2,
+                            #                 theta1, cls_id, ref_frenet, img_name1)
         if ego_id in edges.keys() and len(edges[ego_id]) == 0:
             del edges[ego_id]
     return edges
+
+
+def plot_csv_imgs(edges, c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
+    for ego_id, e1_data in edges.items():
+        print(ego_id)
+        for start_ts, e2_data in e1_data.items():
+            for cur_ts, e3_data in e2_data.items():
+                if not isinstance(cur_ts, int):
+                    continue
+                for id1, e4_data in e3_data.items():
+                    if e4_data is None:
+                        continue
+                    for id2 in e4_data.keys():
+                        cur_ms1 = c_data[id1]['motion_states'][cur_ts]
+                        path1 = c_data[id1]['ref path']
+                        theta1 = math.pi / 2 - cur_ms1['psi_rad']
+                        path2 = c_data[id2]['ref path']
+                        if path1 == path2:
+                            continue
+                        cls_id = edges[ego_id][start_ts]['ita_id'][id1][id2]
+                        ita1 = ita_info[path1][path2][cls_id]
+                        img_name1 = '{}_{}_{}_{}_{}_0.png'.format(csv_key, id1, id2, cur_ts, cls_id)
+                        img_path = img_dir + img_name1
+                        save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2,
+                                        0, cls_id, ref_frenet, img_name1)

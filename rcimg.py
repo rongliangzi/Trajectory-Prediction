@@ -1,0 +1,16 @@
+from PIL import Image
+import matplotlib.pyplot as plt
+img=Image.open('D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/1--1-2_1--1-4_0_0.png')
+img_r=img.rotate(45)
+img_rc = img_r.crop((8, 8, 40, 40))
+plt.figure()
+plt.subplot(131)
+plt.imshow(img)
+plt.title('raw img')
+plt.subplot(132)
+plt.imshow(img_r)
+plt.title('rotate 45')
+plt.subplot(133)
+plt.title('crop 32*32')
+plt.imshow(img_rc)
+plt.show()

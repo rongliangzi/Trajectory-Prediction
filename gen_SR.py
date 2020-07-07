@@ -92,9 +92,10 @@ if __name__ == '__main__':
     #                          'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
 
     # generate intersection figures
-    rotate_n = 49
-    crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet,
-                          'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/', rotate_n)
+
+    img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/'
+    rotate_n = 0
+    crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents
@@ -112,7 +113,13 @@ if __name__ == '__main__':
     # save edge info
     # for k, v in csv_data.items():
     #     print(k)
-    #     split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet)
+    #     split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet, k,
+    #                                 img_save_dir+k+'/', SR_ref_path_points)
     #     pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
     #     pickle.dump(split_edges, pickle_file)
     #     pickle_file.close()
+        # pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'rb')
+        # split_edges = pickle.load(pickle_file)
+        # pickle_file.close()
+        # plot_csv_imgs(split_edges, v, SR_interactions, ref_point_frenet, k,
+        #               img_save_dir+k+'/', SR_ref_path_points)

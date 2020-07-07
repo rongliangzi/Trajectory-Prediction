@@ -65,11 +65,7 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
         tracks = dict_utils.get_value_list(track_dictionary)
         agent_path = dict()
         for agent in tracks:
-            # transform the coordinate
-            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
-                agent.motion_states[ts].x = (agent.motion_states[ts].x - x_s)
-                agent.motion_states[ts].y = (agent.motion_states[ts].y - y_s)
-            # used the transformed coordinate to judge start and end area
+            # judge start and end area
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
@@ -104,24 +100,24 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
         for track in v:
             for ts in range(track.time_stamp_ms_first, track.time_stamp_ms_last+100, 100):
                 motion_state = track.motion_states[ts]
-                if (path_name == '12-8' and motion_state.x < 1015-x_s) \
-                        or (path_name == '14-1' and motion_state.x > 1011-x_s):
+                if (path_name == '12-8' and motion_state.x < 1015) \
+                        or (path_name == '14-1' and motion_state.x > 1011):
                     pass
-                elif path_name in ['7-8', '9-5'] and motion_state.y < 970-y_s:
+                elif path_name in ['7-8', '9-5'] and motion_state.y < 970:
                     # add some data points
                     for i in range(20):
-                        xy.append([motion_state.x + random.random() * 0.5,
-                                   motion_state.y + (random.random() - 0.5) * 0.4])
-                        xy.append([motion_state.x + random.random() * 0.5,
-                                   motion_state.y + random.random() - 6])
-                elif path_name == '12-8' and motion_state.x > 1075-x_s:
+                        xy.append([motion_state.x - x_s + random.random() * 0.5,
+                                   motion_state.y - y_s + (random.random() - 0.5) * 0.4])
+                        xy.append([motion_state.x - x_s + random.random() * 0.5,
+                                   motion_state.y - y_s + random.random() - 6])
+                elif path_name == '12-8' and motion_state.x > 1075:
                     # add some data points
                     for i in range(30):
                         r = random.random() * 3
-                        xy.append([motion_state.x + r,
-                                   motion_state.y + r * 0.1 + random.random() * 0.8])
+                        xy.append([motion_state.x - x_s + r,
+                                   motion_state.y - y_s - x_s + r * 0.1 + random.random() * 0.8])
                 else:
-                    xy.append([motion_state.x, motion_state.y])
+                    xy.append([motion_state.x - x_s, motion_state.y - y_s])
         # for rare paths, use raw points and interpolation points
         if path_name in ['12-10', '12-5', '6-4', '2-1', '3-15', '3-5', '6-10',
                          '7-11', '9-11', '9-15']:
@@ -156,12 +152,12 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
                 plt.text(min(ref_x_pts[-1], 1084), ref_y_pts[-1], 'end', zorder=30, fontsize=30)
                 plt.savefig('D:/Dev/UCB task/path_imgs/MA/{}.png'.format(path_name))
                 plt.close()
-
     return ref_paths, csv_dict, rare_paths
 
 
 def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
     all_csv_dict = dict()
+    print('get_track_label:')
     for csv_id, csv_agents in csv_data.items():
         print(csv_id)
         csv_dict = dict()

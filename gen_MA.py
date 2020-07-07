@@ -2,6 +2,7 @@ from utils.MA_utils import *
 from utils.roundabout_utils import plot_ref_path, ref_paths2frenet, \
     save_interaction_bg_figs, crop_interaction_figs, get_csv_edges
 import pickle
+import json
 import os
 start_areas = dict()
 start_areas[2] = dict()
@@ -59,17 +60,6 @@ end_areas[15] = dict()
 end_areas[15]['x'] = [1004.9, 1005.1, 1008, 1006.5]
 end_areas[15]['y'] = [983.8, 975, 975.4, 983.4]
 x_s, y_s = 971, 950
-new_start_areas = dict()
-for area_id in start_areas.keys():
-    new_start_areas[area_id] = dict()
-    new_start_areas[area_id]['x'] = [(x - x_s) for x in start_areas[area_id]['x']]
-    new_start_areas[area_id]['y'] = [(y - y_s) for y in start_areas[area_id]['y']]
-    new_start_areas[area_id]['stopline'] = [(x - x_s, y-y_s) for x, y in start_areas[area_id]['stopline']]
-new_end_areas = dict()
-for area_id in end_areas.keys():
-    new_end_areas[area_id] = dict()
-    new_end_areas[area_id]['x'] = [(x-x_s) for x in end_areas[area_id]['x']]
-    new_end_areas[area_id]['y'] = [(y-y_s) for y in end_areas[area_id]['y']]
 
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
@@ -91,9 +81,9 @@ if __name__ == '__main__':
         rare_paths = pickle.load(pickle_file)
         pickle_file.close()
     else:
-        # MA_ref_path_points: (x,2) array
-        MA_ref_path_points, csv_dict, rare_paths = get_ref_paths(base_path, dir_name, new_start_areas,
-                                                                 new_end_areas, x_s, y_s, save_img=True)
+        # MA_ref_path_points[path name]: (x,2) array
+        MA_ref_path_points, csv_dict, rare_paths = get_ref_paths(base_path, dir_name, start_areas,
+                                                                 end_areas, x_s, y_s, save_img=True)
         pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl', 'wb')
         pickle.dump(MA_ref_path_points, pickle_file)
         pickle_file.close()
@@ -118,14 +108,29 @@ if __name__ == '__main__':
     # save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
     #                          'D:/Dev/UCB task/intersection_figs/roundabout_MA/')
     # generate interaction figures
-    rotate_n = 49
+    img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_MA_crop/'
+    rotate_n = 0
     # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
-    #                       'D:/Dev/UCB task/intersection_figs/roundabout_MA_crop/', rotate_n)
+    #                       img_save_dir, rotate_n)
 
     # save edge info
     for k, v in csv_data.items():
         print(k)
-        split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet)
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+        split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet, k,
+                                    img_save_dir+k+'/', MA_ref_path_points)
+        if k in ['001', '002']:
+            edge_keys = sorted(split_edges.keys())
+            split_n = 4
+            for i in range(split_n):
+                end = min(len(edge_keys), (i+1)*len(edge_keys)//split_n)
+                split_keys = edge_keys[i*len(edge_keys)//split_n:end]
+                split_dict = dict()
+                for key in split_keys:
+                    split_dict[key] = split_edges[key]
+                pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}_{}.pkl'.format(k, i), 'wb')
+                pickle.dump(split_dict, pickle_file)
+                pickle_file.close()
+        else:
+            pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
+            pickle.dump(split_edges, pickle_file)
+            pickle_file.close()

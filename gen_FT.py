@@ -105,13 +105,13 @@ if __name__ == '__main__':
 
     FT_interactions = find_all_interactions(FT_ref_path_points)
 
-    save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
-                             'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    # save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
+    #                          'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
 
-    rotate_n = 49
-
-    crop_interaction_figs(FT_ref_path_points, FT_interactions, ref_point_frenet,
-                          'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/', rotate_n)
+    img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/'
+    rotate_n = 0
+    # crop_interaction_figs(FT_ref_path_points, FT_interactions, ref_point_frenet,
+    #                       img_save_dir, rotate_n)
 
     if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')
@@ -123,9 +123,13 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    # for k, v in csv_data.items():
-    #     print(k)
-    #     split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
-    #     pickle.dump(split_edges, pickle_file)
-    #     pickle_file.close()
+
+    for k, v in csv_data.items():
+        if k < '017':
+            continue
+        print(k)
+        split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,
+                                    img_save_dir+k+'/', FT_ref_path_points)
+        pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
+        pickle.dump(split_edges, pickle_file)
+        pickle_file.close()
