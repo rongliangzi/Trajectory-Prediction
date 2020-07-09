@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # crop_interaction_figs(FT_ref_path_points, FT_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
     save_complete_ref_path_fig(FT_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_FT/',
-                               (960, 1055), (960, 1035))
+                               (945, 1070), (945, 1050))
 
     # if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
     #     pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')

@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
     save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_MA/',
-                               (970, 1090), (960, 1040))
+                               (955, 1105), (945, 1055))
 
     '''# save edge info
     for k, v in csv_data.items():

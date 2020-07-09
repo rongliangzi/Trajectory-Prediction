@@ -4,6 +4,7 @@ from scipy.optimize import leastsq
 import os
 import random
 import glob
+import pickle
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from utils import map_vis_without_lanelet
@@ -144,7 +145,7 @@ def find_all_interactions(ref_paths, th=0.6, skip=20):
 def save_complete_ref_path_fig(ref_paths, save_dir, xlim, ylim):
     keys = sorted(ref_paths.keys())
     for path1 in keys:
-        fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
+        fig, axes = plt.subplots(1, 1, figsize=((xlim[1]-xlim[0])//5, (ylim[1]-ylim[0])//5), dpi=8)
         # set bg to black
         axes.patch.set_facecolor("k")
         lw = 10
@@ -861,3 +862,34 @@ def plot_csv_imgs(edges, c_data, ita_info, ref_frenet, csv_key, img_dir, ref_pat
                         img_path = img_dir + img_name1
                         save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2,
                                         0, cls_id, ref_frenet, img_name1)
+
+
+def save_ts_theta(csv_data, save_path):
+    data = dict()
+    for k, c_data in csv_data.items():
+        data[k] = dict()
+        for ego_id, ego_data in c_data.items():
+            data[k][ego_id] = dict()
+            for ts in range(ego_data['time_stamp_ms_first'], ego_data['time_stamp_ms_last'] + 100, 100):
+                ego_ms = ego_data['motion_states'][ts]
+                data[k][ego_id][ts] = [ego_ms['x'], ego_ms['y'], ego_ms['psi_rad']]
+    pickle_file = open(save_path, 'wb')
+    pickle.dump(data, pickle_file)
+    pickle_file.close()
+    return data
+
+
+def rotate_crop_ts(img_path, data, xs, ys):
+    x, y, psi_rad = data
+    theta = math.pi/2 - psi_rad
+    from PIL import Image
+    img = Image.open(img_path)
+    w, h = img.size
+    xc = int(1 + (x - xs) * 1.6)
+    yc = h - int(1 + (y - ys) * 1.6)
+    img = img.rotate(theta*180/math.pi, center=(xc, yc), resample=Image.BILINEAR)
+    img = img.crop((xc-16, yc-16, xc+16, yc+16))
+    print(img.size, xc, yc)
+    plt.figure()
+    plt.imshow(img)
+    plt.show()
