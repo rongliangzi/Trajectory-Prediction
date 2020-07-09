@@ -95,7 +95,9 @@ if __name__ == '__main__':
 
     img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/'
     rotate_n = 0
-    crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
+    # crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
+    save_complete_ref_path_fig(SR_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_SR/',
+                               (915, 1070), (980, 1065))
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents

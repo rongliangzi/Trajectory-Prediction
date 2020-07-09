@@ -112,24 +112,24 @@ if __name__ == '__main__':
     rotate_n = 0
     # crop_interaction_figs(FT_ref_path_points, FT_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
+    save_complete_ref_path_fig(FT_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_FT/',
+                               (960, 1055), (960, 1035))
 
-    if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')
-        csv_data = pickle.load(pickle_file)
-        pickle_file.close()
-    else:
-        csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
-                                   FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
-        pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
-        pickle.dump(csv_data, pickle_file)
-        pickle_file.close()
+    # if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
+    #     pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')
+    #     csv_data = pickle.load(pickle_file)
+    #     pickle_file.close()
+    # else:
+    #     csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
+    #                                FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
+    #     pickle.dump(csv_data, pickle_file)
+    #     pickle_file.close()
 
-    for k, v in csv_data.items():
-        if k < '017':
-            continue
-        print(k)
-        split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,
-                                    img_save_dir+k+'/', FT_ref_path_points)
-        pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,
+    #                                 img_save_dir+k+'/', FT_ref_path_points)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

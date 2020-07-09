@@ -141,6 +141,28 @@ def find_all_interactions(ref_paths, th=0.6, skip=20):
     return interactions
 
 
+def save_complete_ref_path_fig(ref_paths, save_dir, xlim, ylim):
+    keys = sorted(ref_paths.keys())
+    for path1 in keys:
+        fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
+        # set bg to black
+        axes.patch.set_facecolor("k")
+        lw = 10
+        plt.plot([p[0] for p in ref_paths[path1]], [p[1] for p in ref_paths[path1]], linewidth=lw)
+        plt.xlim(xlim[0], xlim[1])
+        plt.ylim(ylim[0], ylim[1])
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+            print('make dir: ', save_dir)
+        # remove the white frame
+        plt.gca().xaxis.set_major_locator(plt.NullLocator())
+        plt.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        plt.savefig(save_dir + '{}.png'.format(path1))
+        plt.close()
+
+
 def save_interaction_bg_figs(ref_paths, interactions, map_file, save_dir):
     keys = sorted(ref_paths.keys())
     fig_n = 0

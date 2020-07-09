@@ -1,6 +1,6 @@
 from utils.MA_utils import *
 from utils.roundabout_utils import plot_ref_path, ref_paths2frenet, \
-    save_interaction_bg_figs, crop_interaction_figs, get_csv_edges
+    save_interaction_bg_figs, crop_interaction_figs, get_csv_edges, save_complete_ref_path_fig
 import pickle
 import json
 import os
@@ -112,8 +112,10 @@ if __name__ == '__main__':
     rotate_n = 0
     # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
+    save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_MA/',
+                               (970, 1090), (960, 1040))
 
-    # save edge info
+    '''# save edge info
     for k, v in csv_data.items():
         print(k)
         split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet, k,
@@ -133,4 +135,4 @@ if __name__ == '__main__':
         else:
             pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
             pickle.dump(split_edges, pickle_file)
-            pickle_file.close()
+            pickle_file.close()'''

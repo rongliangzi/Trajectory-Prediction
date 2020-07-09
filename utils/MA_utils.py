@@ -115,7 +115,7 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
                     for i in range(30):
                         r = random.random() * 3
                         xy.append([motion_state.x - x_s + r,
-                                   motion_state.y - y_s - x_s + r * 0.1 + random.random() * 0.8])
+                                   motion_state.y - y_s + r * 0.1 + random.random() * 0.8])
                 else:
                     xy.append([motion_state.x - x_s, motion_state.y - y_s])
         # for rare paths, use raw points and interpolation points
