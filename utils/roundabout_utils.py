@@ -880,6 +880,8 @@ def save_ts_theta(csv_data, save_path):
 
 
 def rotate_crop_ts(img_path, data, xs, ys):
+    import matplotlib.pyplot as plt
+    import math
     x, y, psi_rad = data
     theta = math.pi/2 - psi_rad
     from PIL import Image
@@ -893,3 +895,21 @@ def rotate_crop_ts(img_path, data, xs, ys):
     plt.figure()
     plt.imshow(img)
     plt.show()
+
+
+if __name__ == '__main__':
+    dataset = 'SR'
+
+    import pickle
+    # path
+    pickle_file = open('D:/Dev/UCB task/pickle/{}/ts_theta_{}.pkl'.format(dataset, dataset), 'rb')
+    data = pickle.load(pickle_file)
+    pickle_file.close()
+
+    start_xy = {'SR': (900, 965), 'FT': (945, 945), 'MA': (955, 945)}
+    xs, ys = start_xy[dataset]
+    # in 000.csv, for the car id=11 whose ref path='5--1-2', in time step=fts, get the 32*32 image
+    # data[csv_id][car_id][time step] return [x, y, psi_rad]
+    path = '5--1-2'
+    fts = 3600
+    rotate_crop_ts('D:/Dev/UCB task/intersection_figs/single_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)

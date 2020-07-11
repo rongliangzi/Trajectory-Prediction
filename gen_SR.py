@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
     xs = 900
     ys = 965
-    save_complete_ref_path_fig(SR_ref_path_points, 'D:/Dev/UCB task/intersection_figs/complete_SR/',
+    save_complete_ref_path_fig(SR_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_SR/',
                                (xs, 1085), (ys, 1080))
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
@@ -116,8 +116,10 @@ if __name__ == '__main__':
         pickle_file.close()
     data = save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/SR/ts_theta_SR.pkl')
     path = csv_data['000'][11]['ref path']
+    print(path)
     fts = csv_data['000'][11]['time_stamp_ms_first']+3500
-    rotate_crop_ts('D:/Dev/UCB task/intersection_figs/complete_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)
+    print(fts)
+    rotate_crop_ts('D:/Dev/UCB task/intersection_figs/single_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)
     # save edge info
     # for k, v in csv_data.items():
     #     print(k)
