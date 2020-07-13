@@ -181,9 +181,10 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 agent_dict['motion_states'][ts]['vx'] = ms.vx
                 agent_dict['motion_states'][ts]['vy'] = ms.vy
                 psi_rad = agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
-                f_s, f_d = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
+                f_s, f_d, proj = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
                 agent_dict['motion_states'][ts]['frenet_s'] = f_s
                 agent_dict['motion_states'][ts]['frenet_d'] = f_d
+                agent_dict['motion_states'][ts]['proj'] = proj
                 if ts > agent.time_stamp_ms_first:
                     vs = (f_s - agent_dict['motion_states'][ts-100]['frenet_s']) / 0.1
                     agent_dict['motion_states'][ts]['vs'] = vs

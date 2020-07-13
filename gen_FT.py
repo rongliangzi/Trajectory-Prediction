@@ -80,6 +80,7 @@ if __name__ == '__main__':
     cx, cy = fit_circle(circle_merge_point)
     # a dict, call by path and return an array(x,2)
     FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
+
     # complete missing trajectory to make paths have the same frenet starting point
     complete = [['1-10', '1--1-2', '3--1-10'], ['1-12', '1--1-2', '3--1-12'],
                 ['3-2', '3--1-4', '1--1-2'], ['7-4', '7--1-2', '1--1-4'],
@@ -100,9 +101,14 @@ if __name__ == '__main__':
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         FT_ref_path_points[cmp] = xyp1
 
+    pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_xy_FT.pkl', 'wb')
+    pickle.dump(FT_ref_path_points, pickle_file)
+    pickle_file.close()
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(FT_ref_path_points)
-
+    pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_frenet_FT.pkl', 'wb')
+    pickle.dump(ref_point_frenet, pickle_file)
+    pickle_file.close()
     FT_interactions = find_all_interactions(FT_ref_path_points)
 
     # save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
@@ -112,8 +118,8 @@ if __name__ == '__main__':
     rotate_n = 0
     # crop_interaction_figs(FT_ref_path_points, FT_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
-    save_complete_ref_path_fig(FT_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_FT/',
-                               (945, 1070), (945, 1050))
+    # save_complete_ref_path_fig(FT_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_FT/',
+    #                            (945, 1070), (945, 1050))
 
     if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')
@@ -125,7 +131,7 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/FT/ts_theta_FT.pkl')
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/FT/ts_theta_FT.pkl')
     # for k, v in csv_data.items():
     #     print(k)
     #     split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,

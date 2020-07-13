@@ -71,7 +71,7 @@ if __name__ == '__main__':
     if os.path.exists('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl') and \
             os.path.exists('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl') and \
             os.path.exists('D:/Dev/UCB task/pickle/MA/rare_paths.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl', 'rb')
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl', 'rb')
         MA_ref_path_points = pickle.load(pickle_file)
         pickle_file.close()
         pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'rb')
@@ -94,6 +94,9 @@ if __name__ == '__main__':
         pickle.dump(rare_paths, pickle_file)
         pickle_file.close()
     ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
+    pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
+    pickle.dump(ref_point_frenet, pickle_file)
+    pickle_file.close()
     if os.path.exists('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
@@ -112,9 +115,9 @@ if __name__ == '__main__':
     rotate_n = 0
     # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
     #                       img_save_dir, rotate_n)
-    save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_MA/',
-                               (955, 1105), (945, 1055))
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
+    # save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_MA/',
+    #                            (955, 1105), (945, 1055))
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
     '''# save edge info
     for k, v in csv_data.items():
         print(k)

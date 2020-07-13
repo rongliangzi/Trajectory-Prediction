@@ -84,8 +84,15 @@ if __name__ == '__main__':
         yp1 = pre_y + list(yp1) + post_y
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         SR_ref_path_points[cmp] = xyp1
+
+    pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_xy_SR.pkl', 'wb')
+    pickle.dump(SR_ref_path_points, pickle_file)
+    pickle_file.close()
     # a dict, call by path return an array(x,1): frenet of ref path points
     ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
+    pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_frenet_SR.pkl', 'wb')
+    pickle.dump(ref_point_frenet, pickle_file)
+    pickle_file.close()
     SR_interactions = find_all_interactions(SR_ref_path_points)
     # visualize the ref paths with background
     # save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
@@ -98,8 +105,8 @@ if __name__ == '__main__':
     # crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
     xs = 900
     ys = 965
-    save_complete_ref_path_fig(SR_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_SR/',
-                               (xs, 1085), (ys, 1080))
+    # save_complete_ref_path_fig(SR_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_SR/',
+    #                            (xs, 1085), (ys, 1080))
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents
@@ -114,12 +121,7 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    data = save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/SR/ts_theta_SR.pkl')
-    path = csv_data['000'][11]['ref path']
-    print(path)
-    fts = csv_data['000'][11]['time_stamp_ms_first']+3500
-    print(fts)
-    rotate_crop_ts('D:/Dev/UCB task/intersection_figs/single_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)
+
     # save edge info
     # for k, v in csv_data.items():
     #     print(k)

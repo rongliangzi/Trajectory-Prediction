@@ -587,9 +587,10 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
                 x = agent.motion_states[ts].x
                 y = agent.motion_states[ts].y
                 psi_rad = agent.motion_states[ts].psi_rad
-                f_s, f_d = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
+                f_s, f_d, proj = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
                 agent.motion_states[ts].frenet_s = f_s
                 agent.motion_states[ts].frenet_d = f_d
+                agent.motion_states[ts].proj = proj
                 if ts > agent.time_stamp_ms_first:
                     vs = (f_s - agent.motion_states[ts-100].frenet_s) / 0.1
                     agent.motion_states[ts].vs = vs
@@ -611,6 +612,7 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
                 agent_dict['motion_states'][ts]['vs'] = ms.vs
                 agent_dict['motion_states'][ts]['frenet_s'] = ms.frenet_s
                 agent_dict['motion_states'][ts]['frenet_d'] = ms.frenet_d
+                agent_dict['motion_states'][ts]['proj'] = ms.proj
             csv_agents[agent.track_id] = agent_dict
         csv_dict[csv_name[-7:-4]] = csv_agents
     return csv_dict
@@ -897,19 +899,19 @@ def rotate_crop_ts(img_path, data, xs, ys):
     plt.show()
 
 
-if __name__ == '__main__':
-    dataset = 'SR'
-
-    import pickle
-    # path
-    pickle_file = open('D:/Dev/UCB task/pickle/{}/ts_theta_{}.pkl'.format(dataset, dataset), 'rb')
-    data = pickle.load(pickle_file)
-    pickle_file.close()
-
-    start_xy = {'SR': (900, 965), 'FT': (945, 945), 'MA': (955, 945)}
-    xs, ys = start_xy[dataset]
-    # in 000.csv, for the car id=11 whose ref path='5--1-2', in time step=fts, get the 32*32 image
-    # data[csv_id][car_id][time step] return [x, y, psi_rad]
-    path = '5--1-2'
-    fts = 3600
-    rotate_crop_ts('D:/Dev/UCB task/intersection_figs/single_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)
+# if __name__ == '__main__':
+#     dataset = 'SR'
+#
+#     import pickle
+#     # path
+#     pickle_file = open('D:/Dev/UCB task/pickle/{}/ts_theta_{}.pkl'.format(dataset, dataset), 'rb')
+#     data = pickle.load(pickle_file)
+#     pickle_file.close()
+#
+#     start_xy = {'SR': (900, 965), 'FT': (945, 945), 'MA': (955, 945)}
+#     xs, ys = start_xy[dataset]
+#     # in 000.csv, for the car id=11 whose ref path='5--1-2', in time step=fts, get the 32*32 image
+#     # data[csv_id][car_id][time step] return [x, y, psi_rad]
+#     path = '5--1-2'
+#     fts = 3600
+#     rotate_crop_ts('D:/Dev/UCB task/intersection_figs/single_SR/{}.png'.format(path), data['000'][11][fts], xs, ys)

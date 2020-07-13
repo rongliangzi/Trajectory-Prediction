@@ -17,6 +17,7 @@ class MotionState:
         self.vs = None
         self.frenet_s = None
         self.frenet_d = None
+        self.proj = None
 
     def __str__(self):
         return "MotionState: " + str(self.__dict__)
