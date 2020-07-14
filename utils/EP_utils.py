@@ -6,8 +6,8 @@ from utils import map_vis_without_lanelet
 import matplotlib.pyplot as plt
 from utils.roundabout_utils import nearest_c_point, on_press
 import re
-y_range = {0: [1050, 980], 1: [1050, 1010], 6: [1050, 1010], 8: [1050, 1010], 19: [1050, 1010], 20: [1050, 1010]}
-x_range = {2: [960, 1010], 15: [1030, 1065], 16: [1030, 1065], 17: [1065, 1100], 18: [1065, 1100]}
+y_range = {0: [1050, 1020], 1: [1050, 1020], 6: [1050, 1010], 8: [1050, 1010], 19: [1050, 1010], 20: [1050, 1010]}
+x_range = {2: [960, 985], 3: [], 15: [1030, 1065], 16: [1030, 1065], 17: [1065, 1100], 18: [1065, 1100]}
 circle_range = {21: [(1054, 1014), (1066, 1025)], 22: [(1055, 1008), (1070, 1025)], 23: [(1070, 1025), (1078, 1017)],
                 24: [(1066, 1025), (1083, 1007)], }
 
@@ -19,7 +19,7 @@ def read_funcs(func_file):
     map_name = "DR_USA_Roundabout_EP.osm"
     map_file = map_dir + map_name
     map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-    img_id = 0
+    img_id = 2
     with open(func_file) as f:
         lines = f.readlines()
         for line_id, line in enumerate(lines):
@@ -86,7 +86,7 @@ def read_funcs(func_file):
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2, zorder=30)
-            else:
+            else:  # [9, 12, 13, 14]
                 pass
     # fig.canvas.mpl_connect('button_press_event', on_press)
     # plt.show()

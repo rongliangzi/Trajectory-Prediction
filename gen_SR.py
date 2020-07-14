@@ -20,6 +20,7 @@ SR_starting_area_dict[5]['stopline'] = [(1010.7, 1034.7), (1010.5, 1027.8)]
 SR_starting_area_dict[7] = dict()
 SR_starting_area_dict[7]['x'] = [988.5, 988.5, 992.8, 995.6]
 SR_starting_area_dict[7]['y'] = [991.4, 983.4, 983, 990.5]
+SR_starting_area_dict[7]['vel'] = {'y': 1}
 SR_starting_area_dict[7]['stopline'] = [(988.5, 989.4), (995.6, 988.5)]
 
 SR_end_area_dict = dict()
@@ -68,7 +69,7 @@ if __name__ == '__main__':
 
     circle_x, circle_y = fit_circle(all_circle_points)
     # a dict, call by path return an array(x,2)
-    SR_ref_path_points = get_ref_path(mat_data, circle_x, circle_y)
+    SR_ref_path_points = get_ref_path(mat_data, circle_x, circle_y, 'SR')
     complete = [['1-8', '1--1-2', '3--1-8'], ['3-2', '3--1-4', '1--1-2'],
                 ['5-4', '5--1-2', '1--1-4'], ['7-6', '7--1-2', '1--1-6']]
     for cmp, ref_pre, ref_post in complete:
@@ -84,7 +85,8 @@ if __name__ == '__main__':
         yp1 = pre_y + list(yp1) + post_y
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         SR_ref_path_points[cmp] = xyp1
-
+    SR_ref_path_points = fix_ref_path(SR_ref_path_points, 'SR')
+    plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
     pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_xy_SR.pkl', 'wb')
     pickle.dump(SR_ref_path_points, pickle_file)
     pickle_file.close()

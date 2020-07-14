@@ -24,7 +24,7 @@ def fit_ref_path(xy, k, beta_dict, poly_dict):
     # fit a polynomial function using rotated points
     z1 = np.polyfit(x_rot, y_rot, poly)
     p1 = np.poly1d(z1)
-    x_new = np.arange(min(x_rot), max(x_rot), 0.2)
+    x_new = np.arange(min(x_rot), max(x_rot), 0.05)
     pp1 = p1(x_new)
     # rotate the points back
     y_back = pp1 * math.cos(beta) + x_new * math.sin(beta)
@@ -69,7 +69,7 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
-                print(agent.track_id, 'starting or ending area is 0, discard')
+                # print(agent.track_id, 'starting or ending area is 0, discard')
                 continue
             path_name = str(start_area) + '-' + str(end_area)
             agent.ref_path_id = path_name
@@ -120,7 +120,7 @@ def get_ref_paths(base_path, dir_name, starting_areas, end_areas, x_s, y_s, save
                     xy.append([motion_state.x - x_s, motion_state.y - y_s])
         # for rare paths, use raw points and interpolation points
         if path_name in ['12-10', '12-5', '6-4', '2-1', '3-15', '3-5', '6-10',
-                         '7-11', '9-11', '9-15']:
+                         '7-11', '9-11', '9-15', '14-8', '9-8']:
             print('rare path:', path_name)
             rare_paths.append(path_name)
             # x_points = []
@@ -167,12 +167,24 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 continue
             agent_dict = dict()
             agent_dict['track_id'] = agent.track_id
-            agent_dict['time_stamp_ms_first'] = agent.time_stamp_ms_first
-            agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
+
             agent_dict['ref path'] = path_name
             xy_points = ref_path_points[path_name]
             agent_dict['motion_states'] = dict()
+            start_ts = -1
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, drop_flag = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_flag == 0:
+                    start_ts = ts
+                    break
+            if start_ts == -1:
+                print('start_ts:-1', csv_id, agent_id, path_name)
+            agent_dict['time_stamp_ms_first'] = start_ts
+            agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
+            for ts in range(agent_dict['time_stamp_ms_first'], agent_dict['time_stamp_ms_last'] + 100, 100):
                 ms = agent.motion_states[ts]
                 agent_dict['motion_states'][ts] = dict()
                 agent_dict['motion_states'][ts]['time_stamp_ms'] = ms.time_stamp_ms
@@ -180,12 +192,12 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 y = agent_dict['motion_states'][ts]['y'] = ms.y
                 agent_dict['motion_states'][ts]['vx'] = ms.vx
                 agent_dict['motion_states'][ts]['vy'] = ms.vy
-                psi_rad = agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
-                f_s, f_d, proj = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
+                agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
+                f_s, f_d, proj, drop_flag = get_frenet(x, y, xy_points, ref_frenet[path_name])
                 agent_dict['motion_states'][ts]['frenet_s'] = f_s
                 agent_dict['motion_states'][ts]['frenet_d'] = f_d
                 agent_dict['motion_states'][ts]['proj'] = proj
-                if ts > agent.time_stamp_ms_first:
+                if ts > agent_dict['time_stamp_ms_first']:
                     vs = (f_s - agent_dict['motion_states'][ts-100]['frenet_s']) / 0.1
                     agent_dict['motion_states'][ts]['vs'] = vs
             csv_dict[agent_id] = agent_dict

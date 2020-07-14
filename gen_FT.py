@@ -24,8 +24,8 @@ FT_starting_area_dict[9]['x'] = [1041.5, 1048.4, 1050, 1043.2]
 FT_starting_area_dict[9]['y'] = [983.6, 979, 983.2, 988.2]
 FT_starting_area_dict[9]['stopline'] = [(1043.5, 982.6), (1044.9, 986.5)]
 FT_starting_area_dict[11] = dict()
-FT_starting_area_dict[11]['x'] = [1032.2, 1037, 1041.6, 1037]
-FT_starting_area_dict[11]['y'] = [978.9, 972.3, 973.7, 980.4]
+FT_starting_area_dict[11]['x'] = [1033.5, 1037, 1041.6, 1038]
+FT_starting_area_dict[11]['y'] = [977.1, 972.3, 973.7, 978.7]
 FT_starting_area_dict[11]['stopline'] = [(1033.7, 977), (1037.9, 978.5)]
 
 FT_end_area_dict = dict()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     cx, cy = fit_circle(circle_merge_point)
     # a dict, call by path and return an array(x,2)
-    FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy)
+    FT_ref_path_points = get_ref_path(data['Segmented_reference_path'], cx, cy, scene='FT')
 
     # complete missing trajectory to make paths have the same frenet starting point
     complete = [['1-10', '1--1-2', '3--1-10'], ['1-12', '1--1-2', '3--1-12'],
@@ -100,7 +100,8 @@ if __name__ == '__main__':
         yp1 = pre_y + list(yp1) + post_y
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         FT_ref_path_points[cmp] = xyp1
-
+    FT_ref_path_points = fix_ref_path(FT_ref_path_points, 'FT')
+    plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
     pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_xy_FT.pkl', 'wb')
     pickle.dump(FT_ref_path_points, pickle_file)
     pickle_file.close()

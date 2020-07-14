@@ -68,7 +68,7 @@ if __name__ == '__main__':
     dir_name = 'DR_USA_Intersection_MA/'
     # plot_ref_path(map_dir+map_name, {}, start_areas, end_areas)
 
-    if os.path.exists('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl') and \
+    if os.path.exists('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl') and \
             os.path.exists('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl') and \
             os.path.exists('D:/Dev/UCB task/pickle/MA/rare_paths.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl', 'rb')
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         # MA_ref_path_points[path name]: (x,2) array
         MA_ref_path_points, csv_dict, rare_paths = get_ref_paths(base_path, dir_name, start_areas,
                                                                  end_areas, x_s, y_s, save_img=True)
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_ref_path_points.pkl', 'wb')
+        pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl', 'wb')
         pickle.dump(MA_ref_path_points, pickle_file)
         pickle_file.close()
         pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'wb')

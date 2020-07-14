@@ -64,7 +64,7 @@ def plot_start_end_area(ax, starting_area_dict, end_area_dict):
         stopline = v['stopline']
         stop_x = [st[0] for st in stopline]
         stop_y = [st[1] for st in stopline]
-        if key == 1:
+        if key == 11:
             k = (stop_y[1] - stop_y[0]) / (stop_x[1] - stop_x[0])
             b = (stop_x[1] * stop_y[0] - stop_x[0] * stop_y[1]) / (stop_x[1] - stop_x[0])
             b1 = b + 6 * (1 + k ** 2) ** 0.5
@@ -76,7 +76,7 @@ def plot_start_end_area(ax, starting_area_dict, end_area_dict):
             ax.plot(x1, k * x1 + b2, linewidth=5)
             ax.plot(x1, k * x1 + b3, linewidth=5)
             ax.plot(x1, k * x1 + b4, linewidth=5)
-        ax.plot(stop_x, stop_y, c='g', linewidth=5, zorder=30)
+        ax.plot(stop_x, stop_y, c='g', linewidth=2, zorder=30)
         ax.text(x[0], y[0], key, fontsize=20, zorder=41)
         ax.plot(x[0:2], y[0:2], c='g', zorder=40)
         ax.plot(x[1:3], y[1:3], c='g', zorder=40)
@@ -119,7 +119,7 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
         v = ref_path_points[k]
         xp = [p[0] for p in v]
         yp = [p[1] for p in v]
-        plt.plot(xp, yp, linewidth=4)
+        plt.plot(xp, yp, linewidth=2)
     plot_start_end_area(axes, starting_area_dict, end_area_dict)
     fig.canvas.mpl_connect('button_press_event', on_press)
     plt.legend()
@@ -435,7 +435,7 @@ def crop_interaction_figs(ref_paths, interactions, ref_frenet, save_dir, rotate_
     return
 
 
-def get_ref_path(data, cx, cy):
+def get_ref_path(data, cx, cy, scene=''):
     ref_path_points = dict()
     para_path = data['para_path'][0]
     circle_merge_point = data['circle_merge_point'][0]
@@ -471,7 +471,77 @@ def get_ref_path(data, cx, cy):
                 cpx = cx[i1:] + cx[:i2+1]
                 cpy = cy[i1:] + cy[:i2+1]
             cp = np.array([[x, y] for x, y in zip(cpx, cpy)])
+            if scene in ['FT', 'SR']:
+                cp = cp[1:-1]
             ref_path_points[label] = np.vstack((v1['path'], cp, v2['path']))
+    return ref_path_points
+
+
+def get_circle(p1, p2, p3):
+    x21 = p2[0] - p1[0]
+    y21 = p2[1] - p1[1]
+    x32 = p3[0] - p2[0]
+    y32 = p3[1] - p2[1]
+    # three colinear
+    # if x21 * y32 - x32 * y21 == 0:
+    #     return None
+    xy21 = p2[0] * p2[0] - p1[0] * p1[0] + p2[1] * p2[1] - p1[1] * p1[1]
+    xy32 = p3[0] * p3[0] - p2[0] * p2[0] + p3[1] * p3[1] - p2[1] * p2[1]
+    y0 = (x32 * xy21 - x21 * xy32) / 2 * (y21 * x32 - y32 * x21)
+    x0 = (xy21 - 2 * y0 * y21) / (2.0 * x21)
+    r = ((p1[0] - x0) ** 2 + (p1[1] - y0) ** 2) ** 0.5
+    return x0, y0, r
+
+
+def fix_ref_path(ref_path_points, scene=''):
+    if scene == 'FT':
+        ref_path_points['1-10'][161] = (ref_path_points['1-10'][160] + ref_path_points['1-10'][162]) / 2
+        ref_path_points['1-12'][136] = (ref_path_points['1-12'][135] + ref_path_points['1-12'][137])/2
+        # ref_path_points['11-6'][136] = (ref_path_points['11-6'][135] + ref_path_points['11-6'][137]) / 2
+    elif scene == 'SR':
+        ref_path_points['7-6'][69] = (ref_path_points['7-6'][68] + ref_path_points['7-6'][70])/2
+    for k, v in ref_path_points.items():
+        print(k)
+        i = 1
+        while i < len(v)-1:
+            pre = v[i] - v[i-1]
+            post = v[i+1] - v[i]
+            theta1 = math.atan2(pre[1], pre[0])
+            theta2 = math.atan2(post[1], pre[0])
+            theta = ((theta2 - theta1)*180/math.pi)
+            if theta > 180:
+                theta -= 360
+            elif theta < -180:
+                theta += 360
+            if abs(theta) > 90:
+                print(theta)
+                x0, y0, r = get_circle(v[i-1], v[i], v[i+1])
+                theta_p = math.atan2(v[i-1][1]-y0, v[i-1][0]-x0)
+                if theta_p < 0:
+                    theta_p += math.pi * 2
+                theta_c = math.atan2(v[i][1]-y0, v[i][0]-x0)
+                if theta_c < 0:
+                    theta_c += math.pi * 2
+                p1 = []
+                for j in range(1, 10):
+                    x_rot, y_rot = counterclockwise_rotate(v[i - 1][0], v[i - 1][1], (x0, y0),
+                                                           (theta_c - theta_p) * j / 10)
+                    p1.append([x_rot, y_rot])
+                p1 = np.array(p1)
+
+                theta_n = math.atan2(v[i+1][1]-y0, v[i+1][0]-x0)
+                if theta_n < 0:
+                    theta_n += math.pi * 2
+                p2 = []
+                for j in range(1, 10):
+                    x_rot, y_rot = counterclockwise_rotate(v[i-1][0], v[i-1][1], (x0, y0), (theta_n-theta_c)*j/10)
+                    p2.append([x_rot, y_rot])
+                p2 = np.array(p2)
+                v = np.vstack((v[:i], p1, v[i], p2, v[i+1:]))
+                i += 7
+            else:
+                i += 1
+        ref_path_points[k] = v
     return ref_path_points
 
 
@@ -521,9 +591,20 @@ def judge_start(track, areas):
         motion_state = track.motion_states[ts]
         cur_p = (motion_state.x, motion_state.y)
         for k, v in areas.items():
-            in_box = judge_in_box(v['x'], v['y'], cur_p)
-            if in_box == 1:
+            this_start = judge_in_box(v['x'], v['y'], cur_p)
+
+            if this_start == 1:
+                if 'vel' in v.keys():
+                    if 'y' in v['vel']:
+                        vel = motion_state.vy * v['vel']['y']
+                        if vel < 0:
+                            continue
+                    if 'x' in v['vel']:
+                        vel = motion_state.vx * v['vel']['x']
+                        if vel < 0:
+                            continue
                 start = k
+                return start
     return start
 
 
@@ -576,7 +657,7 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
-                print(agent.track_id, 'starting or ending area is 0, discard')
+                # print(agent.track_id, 'starting or ending area is 0, discard')
                 continue
             path_name = str(start_area) + '-' + str(end_area)
             if path_name not in ref_path_points:
