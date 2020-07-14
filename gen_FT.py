@@ -96,12 +96,12 @@ if __name__ == '__main__':
         yp3 = FT_ref_path_points[ref_post][:, 1]
         pre_x, pre_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
         post_x, post_y = get_append(xp1[-1], yp1[-1], xp3, yp3, 'end')
-        xp1 = pre_x + list(xp1) + post_x
-        yp1 = pre_y + list(yp1) + post_y
+        xp1 = pre_x[:-1] + list(xp1) + post_x[1:]
+        yp1 = pre_y[:-1] + list(yp1) + post_y[1:]
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         FT_ref_path_points[cmp] = xyp1
     FT_ref_path_points = fix_ref_path(FT_ref_path_points, 'FT')
-    plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
+    # plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
     pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_xy_FT.pkl', 'wb')
     pickle.dump(FT_ref_path_points, pickle_file)
     pickle_file.close()
@@ -122,13 +122,13 @@ if __name__ == '__main__':
     # save_complete_ref_path_fig(FT_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_FT/',
     #                            (945, 1070), (945, 1050))
 
-    if os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
+    if not os.path.exists('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
         pickle_file.close()
     else:
         csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
-                                   FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict)
+                                   FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict, 'FT')
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()

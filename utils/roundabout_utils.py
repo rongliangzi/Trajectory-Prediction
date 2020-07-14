@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from utils import map_vis_without_lanelet
 from align_ref_img import counterclockwise_rotate
-from utils.intersection_utils import find_interaction
+from utils.intersection_utils import find_interaction, cal_dis
 from utils import dataset_reader
 from utils import dict_utils
-from utils.coordinate_transform import get_frenet
+from utils.coordinate_transform import get_frenet, closest_point_index
 
 
 def residuals(p, x, y):
@@ -497,11 +497,9 @@ def fix_ref_path(ref_path_points, scene=''):
     if scene == 'FT':
         ref_path_points['1-10'][161] = (ref_path_points['1-10'][160] + ref_path_points['1-10'][162]) / 2
         ref_path_points['1-12'][136] = (ref_path_points['1-12'][135] + ref_path_points['1-12'][137])/2
-        # ref_path_points['11-6'][136] = (ref_path_points['11-6'][135] + ref_path_points['11-6'][137]) / 2
-    elif scene == 'SR':
-        ref_path_points['7-6'][69] = (ref_path_points['7-6'][68] + ref_path_points['7-6'][70])/2
+    c_insert_k = 10
+    l_insert_k = 2
     for k, v in ref_path_points.items():
-        print(k)
         i = 1
         while i < len(v)-1:
             pre = v[i] - v[i-1]
@@ -513,7 +511,7 @@ def fix_ref_path(ref_path_points, scene=''):
                 theta -= 360
             elif theta < -180:
                 theta += 360
-            if abs(theta) > 90:
+            if abs(theta) > 45:
                 print(theta)
                 x0, y0, r = get_circle(v[i-1], v[i], v[i+1])
                 theta_p = math.atan2(v[i-1][1]-y0, v[i-1][0]-x0)
@@ -523,9 +521,9 @@ def fix_ref_path(ref_path_points, scene=''):
                 if theta_c < 0:
                     theta_c += math.pi * 2
                 p1 = []
-                for j in range(1, 10):
+                for j in range(1, c_insert_k):
                     x_rot, y_rot = counterclockwise_rotate(v[i - 1][0], v[i - 1][1], (x0, y0),
-                                                           (theta_c - theta_p) * j / 10)
+                                                           (theta_c - theta_p) * j / c_insert_k)
                     p1.append([x_rot, y_rot])
                 p1 = np.array(p1)
 
@@ -533,14 +531,28 @@ def fix_ref_path(ref_path_points, scene=''):
                 if theta_n < 0:
                     theta_n += math.pi * 2
                 p2 = []
-                for j in range(1, 10):
-                    x_rot, y_rot = counterclockwise_rotate(v[i-1][0], v[i-1][1], (x0, y0), (theta_n-theta_c)*j/10)
+                for j in range(1, c_insert_k):
+                    x_rot, y_rot = counterclockwise_rotate(v[i-1][0], v[i-1][1], (x0, y0),
+                                                           (theta_n-theta_c)*j/c_insert_k)
                     p2.append([x_rot, y_rot])
                 p2 = np.array(p2)
                 v = np.vstack((v[:i], p1, v[i], p2, v[i+1:]))
-                i += 7
+                i += c_insert_k * 2 - 1
             else:
-                i += 1
+                p1 = []
+                for j in range(1, l_insert_k):
+                    delta_x = (v[i][0]-v[i-1][0])/l_insert_k
+                    delta_y = (v[i][1]-v[i-1][1])/l_insert_k
+                    p1.append([v[i-1][0]+j*delta_x, v[i-1][1]+j*delta_y])
+                p1 = np.array(p1)
+                p2 = []
+                for j in range(1, l_insert_k):
+                    delta_x = (v[i+1][0]-v[i][0])/l_insert_k
+                    delta_y = (v[i+1][1]-v[i][1])/l_insert_k
+                    p2.append([v[i][0]+j*delta_x, v[i][1]+j*delta_y])
+                p2 = np.array(p2)
+                v = np.vstack((v[:i], p1, v[i], p2, v[i + 1:]))
+                i += l_insert_k * 2
         ref_path_points[k] = v
     return ref_path_points
 
@@ -643,17 +655,21 @@ def ref_paths2frenet(ref_paths):
     return ref_frenet_coor
 
 
-def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_areas):
+def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_areas, scene=None):
     csv_dict = dict()
     # collect data to construct a dict from all csv
     paths = glob.glob(os.path.join(dir_name, '*.csv'))
     paths.sort()
     for csv_name in paths:
         print(csv_name)
+        # if '025' not in csv_name:
+        #     continue
         track_dictionary = dataset_reader.read_tracks(csv_name)
         tracks = dict_utils.get_value_list(track_dictionary)
         csv_agents = dict()
         for agent in tracks:
+            # if agent.track_id != 171:
+            #     continue
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
@@ -663,18 +679,55 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
             if path_name not in ref_path_points:
                 path_name = str(start_area) + '--1-' + str(end_area)
             xy_points = ref_path_points[path_name]
+            start_ts = -1
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, drop_head, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_head == 0:
+                    start_ts = ts
+                    break
+            end_ts = -1
+            for ts in range(agent.time_stamp_ms_last, agent.time_stamp_ms_first - 100, -100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, _, drop_tail = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_tail == 0:
+                    end_ts = ts - 100
+                    break
+            if scene == 'FT':
+                if path_name == '1--1-2':
+                    ms = agent.motion_states[end_ts]
+                    x = ms.x
+                    y = ms.y
+                    closest_point_id = closest_point_index(x, y, xy_points)
+                    if closest_point_id < len(xy_points)//2:
+                        end_ts = end_ts - 1000
+            if start_ts == -1:
+                print('start_ts:-1', csv_name, agent.track_id, path_name)
+            if end_ts == -1:
+                print('end ts: -1', csv_name, agent.track_id, path_name)
+            agent.time_stamp_ms_first = start_ts
+            agent.time_stamp_ms_last = end_ts
             # calculate frenet s,d and velocity along s direction
+            max_min_dis_traj = 0
             for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
                 x = agent.motion_states[ts].x
                 y = agent.motion_states[ts].y
-                psi_rad = agent.motion_states[ts].psi_rad
-                f_s, f_d, proj = get_frenet(x, y, psi_rad, xy_points, ref_frenet[path_name])
+                dis = cal_dis(np.array([[x, y]]), xy_points)
+                min_dis = dis.min()
+                max_min_dis_traj = max(min_dis, max_min_dis_traj)
+                f_s, f_d, proj, _, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
                 agent.motion_states[ts].frenet_s = f_s
                 agent.motion_states[ts].frenet_d = f_d
                 agent.motion_states[ts].proj = proj
                 if ts > agent.time_stamp_ms_first:
                     vs = (f_s - agent.motion_states[ts-100].frenet_s) / 0.1
                     agent.motion_states[ts].vs = vs
+            if max_min_dis_traj > 100:
+                continue
             agent.motion_states[agent.time_stamp_ms_first].vs = agent.motion_states[agent.time_stamp_ms_first+100].vs
             agent_dict = dict()
             agent_dict['track_id'] = agent.track_id

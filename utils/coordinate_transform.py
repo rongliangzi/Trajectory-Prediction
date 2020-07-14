@@ -45,9 +45,13 @@ def get_frenet(x, y, path_points, frenet_s_list):
     proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y)
     proj_x = proj_norm*n_x
     proj_y = proj_norm*n_y
-    drop_flag = 0
+    drop_head = 0
     if prev_wp == 0 and proj_x * n_x < 0:
-        drop_flag = 1
+        drop_head = 1
+    drop_tail = 0
+    if next_wp > 0.97*len(path_points) and \
+            (abs(proj_x) > 0.05 or abs(proj_y > 0.05) or abs(x_x) > 0.5 or abs(x_y) > 0.5):
+        drop_tail = 1
     # judge the sign of d
     len_d = distance(x_x, x_y, proj_x, proj_y)
     len_pre_next = (n_x ** 2 + n_y ** 2) ** 0.5
@@ -65,7 +69,7 @@ def get_frenet(x, y, path_points, frenet_s_list):
     frenet_s = frenet_s_list[prev_wp]
     frenet_s += distance(0, 0, proj_x, proj_y)
 
-    return frenet_s, frenet_d, (proj_x+path_points[prev_wp][0], proj_y+path_points[prev_wp][1]), drop_flag
+    return frenet_s, frenet_d, (proj_x+path_points[prev_wp][0], proj_y+path_points[prev_wp][1]), drop_head, drop_tail
 
 
 # Transform from Frenet s,d coordinates to Cartesian x,y

@@ -81,8 +81,8 @@ if __name__ == '__main__':
         yp3 = SR_ref_path_points[ref_post][:, 1]
         pre_x, pre_y = get_append(xp1[0], yp1[0], xp2, yp2, 'start')
         post_x, post_y = get_append(xp1[-1], yp1[-1], xp3, yp3, 'end')
-        xp1 = pre_x + list(xp1) + post_x
-        yp1 = pre_y + list(yp1) + post_y
+        xp1 = pre_x[:-1] + list(xp1) + post_x[1:]
+        yp1 = pre_y[:-1] + list(yp1) + post_y[1:]
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         SR_ref_path_points[cmp] = xyp1
     SR_ref_path_points = fix_ref_path(SR_ref_path_points, 'SR')
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents
-    if os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
+    if not os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
         pickle_file.close()

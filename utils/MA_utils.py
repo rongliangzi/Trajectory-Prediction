@@ -176,14 +176,25 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 ms = agent.motion_states[ts]
                 x = ms.x
                 y = ms.y
-                _, _, _, drop_flag = get_frenet(x, y, xy_points, ref_frenet[path_name])
-                if drop_flag == 0:
+                _, _, _, drop_head, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_head == 0:
                     start_ts = ts
+                    break
+            end_ts = -1
+            for ts in range(agent.time_stamp_ms_last, agent.time_stamp_ms_first - 100, -100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, _, drop_tail = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_tail == 0:
+                    end_ts = ts
                     break
             if start_ts == -1:
                 print('start_ts:-1', csv_id, agent_id, path_name)
+            if end_ts == -1:
+                print('end ts: -1', csv_id, agent_id, path_name)
             agent_dict['time_stamp_ms_first'] = start_ts
-            agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
+            agent_dict['time_stamp_ms_last'] = end_ts
             for ts in range(agent_dict['time_stamp_ms_first'], agent_dict['time_stamp_ms_last'] + 100, 100):
                 ms = agent.motion_states[ts]
                 agent_dict['motion_states'][ts] = dict()

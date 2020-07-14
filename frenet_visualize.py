@@ -1,6 +1,8 @@
 from utils.coordinate_transform import get_frenet, get_xy
 import pickle
 import matplotlib.pyplot as plt
+import numpy as np
+import time
 
 
 def visualize(raw_xy, trans_xy, ref_xy, delta_xy):
@@ -36,52 +38,50 @@ def cal_max_delta(scene):
     pickle_file = open(work_dir + 'pickle/{}/track_path_frenet_{}.pkl'.format(scene, scene), 'rb')
     csv_data = pickle.load(pickle_file)
     pickle_file.close()
-    scene_max = 0
+    delta_list = []
+    start_t = time.time()
     for k, tracks in csv_data.items():
         print(k)
-        # if k != '001':
+        # if k != '000':
         #     continue
         trans_xy = []
         raw_xy = []
         for trajectory_id, agent_dict in tracks.items():
-            # if trajectory_id != 136:
+            # if trajectory_id != 81:
             #     continue
             car_path = agent_dict['ref path']
-            # if car_path != '7-10':
-            #     continue
-            # print(trajectory_id)
             ref_xy = ref_paths[car_path]
             max_ts = 0
             max_delta = 0
             delta_xy = []
             for ts in range(agent_dict['time_stamp_ms_first'], agent_dict['time_stamp_ms_last'] + 100, 100):
-            # for ts in range(83200-100, 83200 + 500, 100):
+            # for ts in range(256200-100, 256200 + 500, 100):
                 x = agent_dict['motion_states'][ts]['x']
                 y = agent_dict['motion_states'][ts]['y']
                 psi_rad = agent_dict['motion_states'][ts]['psi_rad']
                 # s = agent_dict['motion_states'][ts]['frenet_s']
                 # d = agent_dict['motion_states'][ts]['frenet_d']
-                s, d, _, _ = get_frenet(x, y, ref_xy, ref_frenet[car_path])
+                s, d, _, _, _ = get_frenet(x, y, ref_xy, ref_frenet[car_path])
                 trans_x, trans_y = get_xy(s, d, ref_frenet[car_path], ref_xy)
                 raw_xy.append((x, y))
                 trans_xy.append((trans_x, trans_y))
                 delta = ((trans_x - x) ** 2 + (trans_y - y) ** 2) ** 0.5
+                delta_list.append(delta)
                 # if scene == 'FT' and car_path[0] != '9' and car_path not in ['11-6', '3-2', '7-6'] and max_delta < delta:
                 if delta > max_delta:
                     max_delta = delta
                     max_ts = [ts, agent_dict['time_stamp_ms_first'], agent_dict['time_stamp_ms_last']]
                     delta_xy = [(x, y), (trans_x, trans_y)]
-            if scene == 'FT' and max_delta > 0.1 and car_path[0] != '9' and car_path not in ['11-6', '3-2', '7-6']:
+            if scene == 'FT' and max_delta > 0.01:# and car_path[0] != '9' and car_path not in ['11-6', '3-2', '7-6']:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
-                scene_max = max(scene_max, max_delta)
-            elif scene == 'SR' and max_delta > 0.1 and car_path not in ['1-8']:
+            elif scene == 'SR' and max_delta > 0.01:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
-                scene_max = max(scene_max, max_delta)
             elif scene == 'MA' and max_delta > 0.01:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
-                scene_max = max(scene_max, max_delta)
             # visualize(raw_xy, trans_xy, ref_xy, delta_xy)
-        # print(max_delta)
+    delta_list = np.array(delta_list)
+    print('mean: ', delta_list.mean(), ', var: ', delta_list.var(), ', max: ', delta_list.max())
+    print('time: ', time.time()-start_t)
 
 
 if __name__ == '__main__':
