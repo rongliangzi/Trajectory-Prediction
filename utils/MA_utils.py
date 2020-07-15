@@ -204,7 +204,7 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
                 agent_dict['motion_states'][ts]['vx'] = ms.vx
                 agent_dict['motion_states'][ts]['vy'] = ms.vy
                 agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
-                f_s, f_d, proj, drop_flag = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                f_s, f_d, proj, _, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
                 agent_dict['motion_states'][ts]['frenet_s'] = f_s
                 agent_dict['motion_states'][ts]['frenet_d'] = f_d
                 agent_dict['motion_states'][ts]['proj'] = proj
@@ -216,7 +216,7 @@ def get_track_label(csv_data, ref_path_points, ref_frenet, rare_paths):
     return all_csv_dict
 
 
-def find_ma_interactions(ref_paths, th=1, skip=60):
+def find_ma_interactions(ref_paths, th=1, skip=60, insert_k=4):
     interactions = dict()
     path_names = sorted(ref_paths.keys())
     for path_name in path_names:
@@ -230,22 +230,23 @@ def find_ma_interactions(ref_paths, th=1, skip=60):
             #     continue
             if path1 == '2-8':
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], 1.5, skip, m=1.1)
+                                                     ref_paths[path2], 1.5, skip, m=1.1, insert_k=insert_k)
             elif path1 == '7-10':
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], 1.5, skip, m=1.1, k=2)
+                                                     ref_paths[path2], 1.5, skip, m=1.1, k=2, insert_k=insert_k)
             elif path1 == '7-11' and path2 == '7-8':
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], 20, skip, dis_th=6, m=1.2, k=4)
+                                                     ref_paths[path2], 20, skip, dis_th=6, m=1.2,
+                                                     k=4, insert_k=insert_k)
             elif path1 == '12-8' and path2 == '3-8':
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], 1.5, skip, m=1.2)
+                                                     ref_paths[path2], 1.5, skip, m=1.2, insert_k=insert_k)
             elif path1 == '13-8' and path2 == '3-8':
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], 1.5, skip, m=1.2)
+                                                     ref_paths[path2], 1.5, skip, m=1.2, insert_k=insert_k)
             else:
                 ita12, ita21 = find_intersection_ita(path1, path2, ref_paths[path1],
-                                                     ref_paths[path2], th, skip)
+                                                     ref_paths[path2], th, skip, insert_k=insert_k)
             if ita12 is not None and len(ita12) > 0:
                 # interaction of path1 and path2 exists
                 interactions[path1][path2] = ita12

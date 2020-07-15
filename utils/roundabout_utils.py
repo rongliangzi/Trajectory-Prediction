@@ -126,7 +126,8 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
     plt.show()
 
 
-def find_all_interactions(ref_paths, th=0.6, skip=20):
+def find_all_interactions(ref_paths, th=0.6, skip=20, k=1):
+    skip = skip * k
     interactions = dict()
     path_names = sorted(ref_paths.keys())
     for path_name in path_names:
@@ -134,7 +135,7 @@ def find_all_interactions(ref_paths, th=0.6, skip=20):
     for i, path1 in enumerate(path_names):
         for j in range(i+1, len(path_names)):
             path2 = path_names[j]
-            interaction12, interaction21 = find_interaction(ref_paths[path1], ref_paths[path2], th, skip)
+            interaction12, interaction21 = find_interaction(ref_paths[path1], ref_paths[path2], th, skip, k=k)
             if interaction12 is not None and len(interaction12) > 0:
                 # interaction of path1 and path2 exists
                 interactions[path1][path2] = interaction12
@@ -493,12 +494,12 @@ def get_circle(p1, p2, p3):
     return x0, y0, r
 
 
-def fix_ref_path(ref_path_points, scene=''):
+def fix_ref_path(ref_path_points, scene='', insert_k=10):
     if scene == 'FT':
         ref_path_points['1-10'][161] = (ref_path_points['1-10'][160] + ref_path_points['1-10'][162]) / 2
         ref_path_points['1-12'][136] = (ref_path_points['1-12'][135] + ref_path_points['1-12'][137])/2
-    c_insert_k = 10
-    l_insert_k = 10
+    c_insert_k = insert_k
+    l_insert_k = insert_k
     for k, v in ref_path_points.items():
         i = 1
         while i < len(v)-1:
@@ -662,14 +663,10 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
     paths.sort()
     for csv_name in paths:
         print(csv_name)
-        # if '025' not in csv_name:
-        #     continue
         track_dictionary = dataset_reader.read_tracks(csv_name)
         tracks = dict_utils.get_value_list(track_dictionary)
         csv_agents = dict()
         for agent in tracks:
-            # if agent.track_id != 171:
-            #     continue
             start_area = judge_start(agent, starting_areas)
             end_area = judge_end(agent, end_areas)
             if start_area == 0 or end_area == 0:
@@ -735,7 +732,8 @@ def get_track_label(dir_name, ref_path_points, ref_frenet, starting_areas, end_a
             agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
             agent_dict['ref path'] = path_name
             agent_dict['motion_states'] = dict()
-            for ts, ms in agent.motion_states.items():
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
                 agent_dict['motion_states'][ts] = dict()
                 agent_dict['motion_states'][ts]['time_stamp_ms'] = ms.time_stamp_ms
                 agent_dict['motion_states'][ts]['x'] = ms.x
@@ -761,16 +759,6 @@ def get_70_coor(track_data, start_ts):
         else:
             coors.append('NaN')
     return coors
-
-
-def save_all_edges(csv_dict, is_info, ref_frenet):
-    all_edges = dict()
-    for i, c_data in csv_dict.items():
-        # get edge info in one csv file
-        edges = get_csv_edges(c_data, is_info, ref_frenet, i)
-        all_edges[i] = edges
-        print(i, ': ', len(edges), '/', len(c_data))
-    return all_edges
 
 
 def save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2, theta1,
@@ -806,11 +794,10 @@ def save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2, theta1,
 def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
     edges = dict()
     for ego_id, ego_data in c_data.items():
-        print(ego_id)
+        # print(ego_id)
         # if in starting area and have at least 69 frames behind,
         # save ref path image and trajectory data
         ego_path = ego_data['ref path']
-
         for start_ts in range(ego_data['time_stamp_ms_first'],
                               ego_data['time_stamp_ms_last'] - 68 * 100, 100):
             # ego_start_ms = ego_track['motion_states'][start_ts]
@@ -847,7 +834,7 @@ def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
                     continue
                 edges[ego_id][start_ts]['agents'].append(other_id)
 
-            # delete agents without interaction with any other agent in this case
+            # find agents without interaction with any other agent in this case
             to_delete_agents = []
             for id1 in edges[ego_id][start_ts]['agents']:
                 interaction_num = 0
@@ -882,7 +869,7 @@ def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
                         closest_its = interactions[closest_k]
                         ita_s1 = ref_frenet[path1][closest_its[1]]
                         ita_s2 = ref_frenet[path2][closest_its[2]]
-                        # having passed the intersection in the 1st frame, no interaction
+                        # having passed the intersection in the 1st frame, no interaction later
                         if ms1_start['frenet_s'] > ita_s1 and ms2_start['frenet_s'] > ita_s2:
                             continue
                         interaction_num += 1
@@ -924,8 +911,8 @@ def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
             if len(edges[ego_id][start_ts]['agents']) < 2:
                 del edges[ego_id][start_ts]
                 continue
-            # for agent_id in edges[ego_id][start_ts]['agents']:
-            #     edges[ego_id][start_ts]['xy'][agent_id] = get_70_coor(c_data[agent_id], start_ts)
+            for agent_id in edges[ego_id][start_ts]['agents']:
+                edges[ego_id][start_ts]['xy'][agent_id] = get_70_coor(c_data[agent_id], start_ts)
 
             # save relative x/y, frenet s to intersection/splitting point or delta s
             for cur_ts in range(start_ts, start_ts + 70 * 100, 100):
@@ -956,7 +943,6 @@ def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)
                             delta_s = cur_ms2['frenet_s'] - cur_ms1['frenet_s']
                             edges[ego_id][start_ts][cur_ts][id1][id2] = [(rot_x, rot_y), delta_s]
-
                         elif id1 in case_ita_s.keys() and id2 in case_ita_s[id1].keys():
                             rel_x, rel_y = cur_ms2['x'] - cur_ms1['x'], cur_ms2['y'] - cur_ms1['y']
                             rot_x, rot_y = counterclockwise_rotate(rel_x, rel_y, (0, 0), theta1)

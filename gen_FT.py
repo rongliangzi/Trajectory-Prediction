@@ -100,7 +100,8 @@ if __name__ == '__main__':
         yp1 = pre_y[:-1] + list(yp1) + post_y[1:]
         xyp1 = np.array([[x1, y1] for x1, y1 in zip(xp1, yp1)])
         FT_ref_path_points[cmp] = xyp1
-    FT_ref_path_points = fix_ref_path(FT_ref_path_points, 'FT')
+    insert_k = 10
+    FT_ref_path_points = fix_ref_path(FT_ref_path_points, 'FT', insert_k=insert_k)
     # plot_ref_path(map_dir + map_name, FT_ref_path_points, FT_starting_area_dict, FT_end_area_dict)
     pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_xy_FT.pkl', 'wb')
     pickle.dump(FT_ref_path_points, pickle_file)
@@ -110,10 +111,12 @@ if __name__ == '__main__':
     pickle_file = open('D:/Dev/UCB task/pickle/FT/ref_path_frenet_FT.pkl', 'wb')
     pickle.dump(ref_point_frenet, pickle_file)
     pickle_file.close()
-    FT_interactions = find_all_interactions(FT_ref_path_points)
-
-    # save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
-    #                          'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
+    FT_interactions = find_all_interactions(FT_ref_path_points, k=insert_k)
+    pickle_file = open('D:/Dev/UCB task/pickle/FT/interaction_FT.pkl', 'wb')
+    pickle.dump(FT_interactions, pickle_file)
+    pickle_file.close()
+    save_interaction_bg_figs(FT_ref_path_points, FT_interactions, map_dir+map_name,
+                             'D:/Dev/UCB task/intersection_figs/roundabout_FT/')
 
     img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_FT_crop/'
     rotate_n = 0
@@ -128,15 +131,16 @@ if __name__ == '__main__':
         pickle_file.close()
     else:
         csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_FT/',
-                                   FT_ref_path_points, ref_point_frenet, FT_starting_area_dict, FT_end_area_dict, 'FT')
+                                   FT_ref_path_points, ref_point_frenet,
+                                   FT_starting_area_dict, FT_end_area_dict, 'FT')
         pickle_file = open('D:/Dev/UCB task/pickle/FT/track_path_frenet_FT.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/FT/ts_theta_FT.pkl')
-    # for k, v in csv_data.items():
-    #     print(k)
-    #     split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,
-    #                                 img_save_dir+k+'/', FT_ref_path_points)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
-    #     pickle.dump(split_edges, pickle_file)
-    #     pickle_file.close()
+    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/FT/ts_theta_FT.pkl')
+    for k, v in csv_data.items():
+        print(k)
+        split_edges = get_csv_edges(v, FT_interactions, ref_point_frenet, k,
+                                    img_save_dir+k+'/', FT_ref_path_points)
+        pickle_file = open('D:/Dev/UCB task/pickle/FT/edges_FT_{}.pkl'.format(k), 'wb')
+        pickle.dump(split_edges, pickle_file)
+        pickle_file.close()

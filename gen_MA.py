@@ -93,6 +93,7 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/MA/rare_paths.pkl', 'wb')
         pickle.dump(rare_paths, pickle_file)
         pickle_file.close()
+
     ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
     pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
     pickle.dump(ref_point_frenet, pickle_file)
@@ -106,7 +107,11 @@ if __name__ == '__main__':
         pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'wb')
         pickle.dump(csv_data, pickle_file)
         pickle_file.close()
-    MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30)
+    # from 0.2 to 0.05, 4 times denser
+    MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30, insert_k=4)
+    pickle_file = open('D:/Dev/UCB task/pickle/MA/interaction_MA.pkl', 'wb')
+    pickle.dump(MA_interactions, pickle_file)
+    pickle_file.close()
     # visualize the interactions with background
     # save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
     #                          'D:/Dev/UCB task/intersection_figs/roundabout_MA/')
@@ -117,25 +122,27 @@ if __name__ == '__main__':
     #                       img_save_dir, rotate_n)
     # save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_MA/',
     #                            (955, 1105), (945, 1055))
-    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
-    '''# save edge info
-    for k, v in csv_data.items():
-        print(k)
-        split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet, k,
-                                    img_save_dir+k+'/', MA_ref_path_points)
-        if k in ['001', '002']:
-            edge_keys = sorted(split_edges.keys())
-            split_n = 4
-            for i in range(split_n):
-                end = min(len(edge_keys), (i+1)*len(edge_keys)//split_n)
-                split_keys = edge_keys[i*len(edge_keys)//split_n:end]
-                split_dict = dict()
-                for key in split_keys:
-                    split_dict[key] = split_edges[key]
-                pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}_{}.pkl'.format(k, i), 'wb')
-                pickle.dump(split_dict, pickle_file)
-                pickle_file.close()
-        else:
-            pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
-            pickle.dump(split_edges, pickle_file)
-            pickle_file.close()'''
+    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
+    # save edge info
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     if k != '002':
+    #         continue
+    #     split_edges = get_csv_edges(v, MA_interactions, ref_point_frenet, k,
+    #                                 img_save_dir+k+'/', MA_ref_path_points)
+    #     if k in ['001', '002']:
+    #         edge_keys = sorted(split_edges.keys())
+    #         split_n = 6
+    #         for i in range(split_n):
+    #             end = min(len(edge_keys), (i+1)*len(edge_keys)//split_n)
+    #             split_keys = edge_keys[i*len(edge_keys)//split_n:end]
+    #             split_dict = dict()
+    #             for key in split_keys:
+    #                 split_dict[key] = split_edges[key]
+    #             pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}_{}.pkl'.format(k, i), 'wb')
+    #             pickle.dump(split_dict, pickle_file)
+    #             pickle_file.close()
+    #     else:
+    #         pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
+    #         pickle.dump(split_edges, pickle_file)
+    #         pickle_file.close()
