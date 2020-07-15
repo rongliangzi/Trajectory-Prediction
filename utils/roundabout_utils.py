@@ -498,7 +498,7 @@ def fix_ref_path(ref_path_points, scene=''):
         ref_path_points['1-10'][161] = (ref_path_points['1-10'][160] + ref_path_points['1-10'][162]) / 2
         ref_path_points['1-12'][136] = (ref_path_points['1-12'][135] + ref_path_points['1-12'][137])/2
     c_insert_k = 10
-    l_insert_k = 2
+    l_insert_k = 10
     for k, v in ref_path_points.items():
         i = 1
         while i < len(v)-1:

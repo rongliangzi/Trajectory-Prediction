@@ -39,15 +39,16 @@ def cal_max_delta(scene):
     csv_data = pickle.load(pickle_file)
     pickle_file.close()
     delta_list = []
+    frenet2xy_time = []
     start_t = time.time()
     for k, tracks in csv_data.items():
         print(k)
-        # if k != '000':
+        # if k != '001':
         #     continue
         trans_xy = []
         raw_xy = []
         for trajectory_id, agent_dict in tracks.items():
-            # if trajectory_id != 81:
+            # if trajectory_id != 113:
             #     continue
             car_path = agent_dict['ref path']
             ref_xy = ref_paths[car_path]
@@ -62,17 +63,19 @@ def cal_max_delta(scene):
                 # s = agent_dict['motion_states'][ts]['frenet_s']
                 # d = agent_dict['motion_states'][ts]['frenet_d']
                 s, d, _, _, _ = get_frenet(x, y, ref_xy, ref_frenet[car_path])
+                t1 = time.time()
                 trans_x, trans_y = get_xy(s, d, ref_frenet[car_path], ref_xy)
+                frenet2xy_time.append(time.time()-t1)
                 raw_xy.append((x, y))
                 trans_xy.append((trans_x, trans_y))
+
                 delta = ((trans_x - x) ** 2 + (trans_y - y) ** 2) ** 0.5
                 delta_list.append(delta)
-                # if scene == 'FT' and car_path[0] != '9' and car_path not in ['11-6', '3-2', '7-6'] and max_delta < delta:
                 if delta > max_delta:
                     max_delta = delta
                     max_ts = [ts, agent_dict['time_stamp_ms_first'], agent_dict['time_stamp_ms_last']]
                     delta_xy = [(x, y), (trans_x, trans_y)]
-            if scene == 'FT' and max_delta > 0.01:# and car_path[0] != '9' and car_path not in ['11-6', '3-2', '7-6']:
+            if scene == 'FT' and max_delta > 0.01:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
             elif scene == 'SR' and max_delta > 0.01:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
@@ -81,9 +84,12 @@ def cal_max_delta(scene):
             # visualize(raw_xy, trans_xy, ref_xy, delta_xy)
     delta_list = np.array(delta_list)
     print('mean: ', delta_list.mean(), ', var: ', delta_list.var(), ', max: ', delta_list.max())
-    print('time: ', time.time()-start_t)
+    print('all time: ', time.time()-start_t)
+    frenet2xy_time = np.array(frenet2xy_time)
+    print(len(frenet2xy_time))
+    print('frenet to xy time, mean: ', frenet2xy_time.mean(), ', total: ', frenet2xy_time.sum())
 
 
 if __name__ == '__main__':
     work_dir = 'D:/Dev/UCB task/'
-    cal_max_delta('MA')
+    cal_max_delta('SR')

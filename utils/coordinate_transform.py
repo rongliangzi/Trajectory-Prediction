@@ -74,11 +74,17 @@ def get_frenet(x, y, path_points, frenet_s_list):
 
 # Transform from Frenet s,d coordinates to Cartesian x,y
 def get_xy(s, d, path_s, path_wp, proj=None):
-    prev_wp = -1
-    while prev_wp < len(path_s) - 1 and s > path_s[prev_wp + 1]:
-        prev_wp += 1
-    if prev_wp == len(path_s)-1:
-        prev_wp = len(path_s) - 2
+    # binary search, find the prev<s<prev+1, the first prev+1>s
+    prev_wp = 0
+    next_wp = len(path_s) - 1
+    while prev_wp <= next_wp:
+        mid = (prev_wp + next_wp) // 2
+        if s >= path_s[mid]:
+            prev_wp = mid + 1
+        else:
+            next_wp = mid - 1
+
+    prev_wp -= 1
     next_wp = prev_wp + 1
     heading = math.atan2((path_wp[next_wp][1] - path_wp[prev_wp][1]), (path_wp[next_wp][0]-path_wp[prev_wp][0]))
     # the x,y,s along the segment

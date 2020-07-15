@@ -112,7 +112,7 @@ if __name__ == '__main__':
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents
-    if not os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
+    if os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
         pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'rb')
         csv_data = pickle.load(pickle_file)
         pickle_file.close()
