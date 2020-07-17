@@ -34,6 +34,8 @@ class Track:
         self.time_stamp_ms_last = None
         self.motion_states = dict()
         self.ref_path_id = -2
+        self.start_area = -1
+        self.end_area = -1
 
     def __str__(self):
         string = "Track: track_id=" + str(self.track_id) + ", agent_type=" + str(self.agent_type) + \

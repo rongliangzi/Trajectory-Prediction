@@ -191,13 +191,14 @@ def save_interaction_bg_figs(ref_paths, interactions, map_file, save_dir):
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=4, label=path2)
-                circle = patches.Circle(p, 0.8, color=(1 - k * 0.2, 0, 0),
-                                        zorder=3, label=label)
+                circle = patches.Circle(p, 0.8, color=(1 - k * 0.2, 0, 0), zorder=3, label=label)
                 axes.add_patch(circle)
                 plt.legend(prop={'size': 20})
                 if not os.path.exists(save_dir):
                     os.mkdir(save_dir)
                     print('make dir: ', save_dir)
+                # fig.canvas.mpl_connect('button_press_event', on_press)
+                # plt.show()
                 plt.savefig(save_dir+'{}_{}_{}.png'.format(path1, path2, str(k)))
                 plt.close()
                 fig_n += 1
@@ -338,8 +339,8 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
         xp1, yp1 = xp1n, yp1n
 
     # rotate randomly to augment data
-    xp1, yp1 = counterclockwise_rotate(xp1, yp1, its, theta)
-    xp2, yp2 = counterclockwise_rotate(xp2, yp2, its, theta)
+    xp1, yp1 = counterclockwise_rotate(np.array(xp1), np.array(yp1), its, theta)
+    xp2, yp2 = counterclockwise_rotate(np.array(xp2), np.array(yp2), its, theta)
     if 'cross' in label:
         if n % 2 == 0:
             plt.plot(xp1[:first_id - start1], yp1[:first_id - start1], linewidth=lw, color=(col_id[0], 0, 1))

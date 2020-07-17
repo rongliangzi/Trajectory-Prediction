@@ -42,7 +42,7 @@ def read_tracks(filename):
         track_dict = dict()
         track_id = None
         ref_path_col = False
-
+        start_end_area = False
         for i, row in enumerate(list(csv_reader)):
 
             if i == 0:
@@ -60,6 +60,8 @@ def read_tracks(filename):
                 assert(row[KeyEnum.width] == Key.width)
                 if len(row) == 12 and row[11] == 'ref_path_id':
                     ref_path_col = True
+                elif len(row) == 13 and row[11] == 'start_area' and row[12] == 'end_area':
+                    start_end_area = True
                 continue
 
             if int(row[KeyEnum.track_id]) != track_id:
@@ -75,6 +77,9 @@ def read_tracks(filename):
                 track.time_stamp_ms_last = int(row[KeyEnum.time_stamp_ms])
                 if ref_path_col:
                     track.ref_path_id = int(row[KeyEnum.ref_path_id])
+                if start_end_area:
+                    track.start_area = row[11]
+                    track.end_area = row[12]
                 track_dict[track_id] = track
 
             track = track_dict[track_id]

@@ -7,43 +7,18 @@ import matplotlib.pyplot as plt
 from utils.roundabout_utils import nearest_c_point, on_press
 from utils.intersection_utils import cal_dis
 import re
-y_range = {0: [1044.25, 1025.27], 1: (1044.513, 976.992), 6: (1005.624, 989.106), 8: (980.936, 1008.159),
-           10: (1012.872, 1002.185), 11: (998.668, 1025.163),
-           19: [1050, 1025], 20: [1027, 1050]}
-x_range = {2: (1014.832, 965.23), 3: (960.058, 971.693), 4: (990.483, 968.049), 5: (968.009, 1015.247),
-           7: (972.215, 987.798),
-           15: [1090, 1080], 16: [1030, 1095], 17: [1083, 1100], 18: [1100, 1035]}
-circle_range = {21: [(1054, 1014), (1066, 1025)], 22: [(1055, 1008), (1072, 1027)], 23: [(1070, 1025), (1078, 1017)],
-                24: [(1066, 1025), (1083, 1007)], }
-# y range of ellipse
-ellipse_range = {9: [1001.84, 1012.93], 12: [1018.4, 1020.09], 13: [998.47, 1007.31], 14: [989, 1002]}
-# it_paths = ['16-22-20', '19-21-18', '19-24-17', '15-23-20', '18', '16']
-it_paths = []
-ellipse_c = {9: [245966132940052094389069248187827666499131677473767424,
-                 -105715553237103548864463554356788343246367354622312448,
-                 -377962922214871373029773089062947781303388459621406474240,
-                 11359061980039628596743822436388178607994751391105024,
-                 79189929390523228544261997509007647019017798340149510144,
-                 147235550419699888248387563756411216617339302179518598951749],
-             12: [64825022356445940467230891397667536979961577472,
-                  3401873117664108950488191217152568392209695506432,
-                  -3585940232080164897836182762064124589087140538744832,
-                  44630685374283474877017875878279149827842845442048,
-                  - 94286664721245006117141227480933928714491887282552832,
-                  49789988786698826227545791881560777988210019369284852475],
-             13: [207677689661223658512495408704363840933524756076953600,
-                  -479950545274804687428522812029984988407425874704465920,
-                  67678531315601681457838429480809277593968449022836342784,
-                  277295705529740872254398145127378781092298236578758656,
-                  - 77947323095098243233117663067298195029597788054841458688,
-                  5255431628871285618305630467260175326979340889080391702465],
-             14: [15105450864250551579164303389419958109438296352358400,
-                  16232297529287823928064678548405889504888435591086080,
-                  - 45045496042619243309287321719657419605423757175820386304,
-                  4360801366460841086327853451695656639142519713562624,
-                  - 24583024456398024193316492369435999541490736235246780416,
-                  33955171138598393492319267315978121325342817422499012077171]}
-signs = {9: 2, 12: 1, 13: 2, 14: 1}
+import glob
+import os
+from utils import dataset_reader
+from utils import dict_utils
+from utils.coordinate_transform import get_frenet
+y_range = {19: [1050, 1025], 20: [1026, 1050]}
+x_range = {15: [1100, 1077], 16: [1083, 1100], 17: [1020, 1095], 18: [1100, 1020]}
+circle_range = {21: [(1054, 1014), (1066.5, 1025.5)], 22: [(1055, 1008), (1072, 1027)],
+                23: [(1070.5, 1026.5), (1078, 1017)], 24: [(1066, 1025), (1083, 1007)], }
+it_paths = ['17-22-20', '19-21-18', '19-24-17', '15-23-20', '18', '17']
+path_mapping = {'17-22-20': '12-16', '19-21-18': '17-11', '19-24-17': '17-13', '15-23-20': '15-16',
+                '18': '14-11', '17': '12-13'}
 
 
 def read_funcs(func_file, wp_n=200):
@@ -51,19 +26,18 @@ def read_funcs(func_file, wp_n=200):
     map_name = "DR_USA_Roundabout_EP.osm"
     map_file = map_dir + map_name
     div_path_points = dict()
+
     with open(func_file) as f:
         lines = f.readlines()
         for line_id, line in enumerate(lines):
-            # if line_id not in [9, 12, 13, 14, 10, 11]:
-            #     continue
-            if line_id in [0, 1, 6, 8, 10, 11, 19, 20]:  #
+            if line_id in y_range.keys():  #
                 fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
                 map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
                 # x=f(y)
                 coef = []
                 p2 = re.compile('\((.*?)\)', re.S)
                 a = re.findall(p2, line)
-                for c in a:
+                for c in a[:-2]:
                     coef.append(eval(c))
                 p = np.poly1d(coef)
                 yp = np.arange(y_range[line_id][0], y_range[line_id][1], (y_range[line_id][1]-y_range[line_id][0])/wp_n)
@@ -74,14 +48,14 @@ def read_funcs(func_file, wp_n=200):
                 plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
                 plt.close()
                 div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
-            elif line_id in [2, 3, 4, 5, 7, 15, 16, 17, 18]:  #
+            elif line_id in x_range.keys():  #
                 fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
                 map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
                 # y=
                 coef = []
                 p2 = re.compile(r'[(](.*?)[)]', re.S)
                 a = re.findall(p2, line)
-                for c in a:
+                for c in a[:-2]:
                     coef.append(eval(c))
                 p = np.poly1d(coef)
                 xp = np.arange(x_range[line_id][0], x_range[line_id][1], (x_range[line_id][1]-x_range[line_id][0])/wp_n)
@@ -92,7 +66,7 @@ def read_funcs(func_file, wp_n=200):
                 plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
                 plt.close()
                 div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
-            elif line_id in [21, 22, 23, 24]:
+            elif line_id in circle_range.keys():
                 fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
                 map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
                 # circle
@@ -134,28 +108,14 @@ def read_funcs(func_file, wp_n=200):
                     xp = xp[::-1]
                     yp = yp[::-1]
                 div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
-            else:  # [9, 12, 13, 14]
-                coef = ellipse_c[line_id]
-                yp = np.arange(ellipse_range[line_id][0], ellipse_range[line_id][1],
-                               (ellipse_range[line_id][1]-ellipse_range[line_id][0])/wp_n)
-                xp = []
-                for y in yp:
-                    a, b, c = coef[0], coef[1]*y+coef[2], coef[3]*y**2+coef[4]*y+coef[5]
-                    x = (-b + (b ** 2 - 4 * a * c) ** 0.5) / (2 * a) if signs[line_id] == 1 else (-b - (
-                                b ** 2 - 4 * a * c) ** 0.5) / (2 * a)
-                    xp.append(x)
-                fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
-                map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
-                plt.text(xp[0], yp[0], 'start', fontsize=20)
-                plt.text(xp[-1], yp[-1], 'end', fontsize=20)
-                plt.plot(xp, yp, linewidth=2)
-                plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
-                plt.close()
-                div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
-        # get_it_path(div_path_points, map_file)
+        ref_path_points = save_it_path(div_path_points, map_file)
+    ref_path_id_points = dict()
+    for k in ref_path_points.keys():
+        ref_path_id_points[path_mapping[k]] = ref_path_points[k]
+    return ref_path_id_points
 
 
-def get_it_path(div_path_points, map_file):
+def save_it_path(div_path_points, map_file):
     ref_path_points = dict()
     for ref_path in it_paths:
         fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
@@ -165,9 +125,9 @@ def get_it_path(div_path_points, map_file):
         if len(div_paths) == 1:
             ref_path_points[ref_path] = div_path_points[int(div_paths[0])]
         else:
-            ref_path_data0 = div_path_points[int(div_paths[0])]
-            ref_path_data1 = div_path_points[int(div_paths[1])]
-            ref_path_data2 = div_path_points[int(div_paths[2])]
+            ref_path_data0 = div_path_points[int(div_paths[0])].copy()
+            ref_path_data1 = div_path_points[int(div_paths[1])].copy()
+            ref_path_data2 = div_path_points[int(div_paths[2])].copy()
 
             dis1 = cal_dis(ref_path_data0, ref_path_data1)
             dis2 = cal_dis(ref_path_data1, ref_path_data2)
@@ -175,16 +135,121 @@ def get_it_path(div_path_points, map_file):
             i1, j1 = min_id1 // dis1.shape[1], min_id1 % dis1.shape[1]
             min_id2 = np.argmin(dis2)
             i2, j2 = min_id2 // dis2.shape[1], min_id2 % dis2.shape[1]
+
             ref_path_data0 = ref_path_data0[:i1]
             ref_path_data1 = ref_path_data1[j1:i2 + 1]
             ref_path_data2 = ref_path_data2[j2:]
+            if ref_path == '17-22-20':
+                ref_path_data0 = np.vstack((ref_path_data0[:-1], (ref_path_data0[-2]+ref_path_data1[0])/2))
+                ref_path_data1[-1] = (ref_path_data1[-2]+ref_path_data2[2])/2
+                ref_path_data2 = ref_path_data2[1:]
+            elif ref_path == '19-21-18':
+                ref_path_data0[-1] = (ref_path_data0[-2]+ref_path_data1[0])/2
+                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[1]) / 2
+                ref_path_data2 = ref_path_data2[1:]
+            elif ref_path == '19-24-17':
+                ref_path_data1[0] = (ref_path_data0[-1]+ref_path_data1[1])/2
+                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[1])/2
+                ref_path_data2 = ref_path_data2[1:]
+            elif ref_path == '15-23-20':
+                ref_path_data1[-2] = (ref_path_data1[-4] + ref_path_data2[0])/2
+                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[0])/2
+                ref_path_data1[-3] = (ref_path_data1[-2] + ref_path_data1[-4])/2
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1, ref_path_data2))
         xp, yp = [point[0] for point in ref_path_points[ref_path]], [point[1] for point in ref_path_points[ref_path]]
+        xy_p = np.array([[x, y] for x, y in zip(xp, yp)])
         plt.plot(xp, yp, linewidth=2)
         plt.text(xp[0], yp[0], 'start', fontsize=20)
         plt.text(xp[-1], yp[-1], 'end', fontsize=20)
-        plt.plot(xp, yp, linewidth=2, zorder=30)
+        plt.plot(xp, yp, linewidth=1, zorder=30, marker='x')
         # fig.canvas.mpl_connect('button_press_event', on_press)
         # plt.show()
         plt.savefig('D:/Dev/UCB task/path_imgs/EP/{}.png'.format(ref_path))
         plt.close()
+        ref_path_points[ref_path] = xy_p
+    return ref_path_points
+
+
+def get_track_label(dir_name, ref_path_points, ref_frenet):
+    csv_dict = dict()
+    # collect data to construct a dict from all csv
+    paths = glob.glob(os.path.join(dir_name, '*.csv'))
+    paths.sort()
+    for csv_name in paths:
+        print(csv_name)
+        track_dictionary = dataset_reader.read_tracks(csv_name)
+        tracks = dict_utils.get_value_list(track_dictionary)
+        csv_agents = dict()
+        for agent in tracks:
+            start_area = agent.start_area
+            end_area = agent.end_area
+            if start_area == 'NAN' or end_area == 'NAN':
+                continue
+            path_name = str(start_area) + '-' + str(end_area)
+            if path_name not in ref_path_points.keys():
+                continue
+            xy_points = ref_path_points[path_name]
+            start_ts = -1
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, drop_head, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_head == 0:
+                    start_ts = ts
+                    break
+            end_ts = -1
+            for ts in range(agent.time_stamp_ms_last, agent.time_stamp_ms_first - 100, -100):
+                ms = agent.motion_states[ts]
+                x = ms.x
+                y = ms.y
+                _, _, _, _, drop_tail = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                if drop_tail == 0:
+                    end_ts = ts - 100
+                    break
+            if start_ts == -1:
+                print('start_ts:-1', csv_name, agent.track_id, path_name)
+            if end_ts == -1:
+                print('end ts: -1', csv_name, agent.track_id, path_name)
+            agent.time_stamp_ms_first = start_ts
+            agent.time_stamp_ms_last = end_ts
+            # calculate frenet s,d and velocity along s direction
+            max_min_dis_traj = 0
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                x = agent.motion_states[ts].x
+                y = agent.motion_states[ts].y
+                dis = cal_dis(np.array([[x, y]]), xy_points)
+                min_dis = dis.min()
+                max_min_dis_traj = max(min_dis, max_min_dis_traj)
+                f_s, f_d, proj, _, _ = get_frenet(x, y, xy_points, ref_frenet[path_name])
+                agent.motion_states[ts].frenet_s = f_s
+                agent.motion_states[ts].frenet_d = f_d
+                agent.motion_states[ts].proj = proj
+                if ts > agent.time_stamp_ms_first:
+                    vs = (f_s - agent.motion_states[ts - 100].frenet_s) / 0.1
+                    agent.motion_states[ts].vs = vs
+            if max_min_dis_traj > 100:
+                continue
+            agent.motion_states[agent.time_stamp_ms_first].vs = agent.motion_states[agent.time_stamp_ms_first + 100].vs
+            agent_dict = dict()
+            agent_dict['track_id'] = agent.track_id
+            agent_dict['time_stamp_ms_first'] = agent.time_stamp_ms_first
+            agent_dict['time_stamp_ms_last'] = agent.time_stamp_ms_last
+            agent_dict['ref path'] = path_name
+            agent_dict['motion_states'] = dict()
+            for ts in range(agent.time_stamp_ms_first, agent.time_stamp_ms_last + 100, 100):
+                ms = agent.motion_states[ts]
+                agent_dict['motion_states'][ts] = dict()
+                agent_dict['motion_states'][ts]['time_stamp_ms'] = ms.time_stamp_ms
+                agent_dict['motion_states'][ts]['x'] = ms.x
+                agent_dict['motion_states'][ts]['y'] = ms.y
+                agent_dict['motion_states'][ts]['vx'] = ms.vx
+                agent_dict['motion_states'][ts]['vy'] = ms.vy
+                agent_dict['motion_states'][ts]['psi_rad'] = ms.psi_rad
+                agent_dict['motion_states'][ts]['vs'] = ms.vs
+                agent_dict['motion_states'][ts]['frenet_s'] = ms.frenet_s
+                agent_dict['motion_states'][ts]['frenet_d'] = ms.frenet_d
+                agent_dict['motion_states'][ts]['proj'] = ms.proj
+            csv_agents[agent.track_id] = agent_dict
+        csv_dict[csv_name[-7:-4]] = csv_agents
+    return csv_dict

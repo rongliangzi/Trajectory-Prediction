@@ -1,6 +1,16 @@
 import math
 import numpy as np
-from utils.intersection_utils import cal_dis
+
+
+def cal_dis(x, y):
+    # calculate distance matrix for [x1,xm] and [y1,yn]
+    row_x, col_x = x.shape
+    row_y, col_y = y.shape
+    xy = np.dot(x, y.T)
+    x2 = np.repeat(np.reshape(np.sum(np.multiply(x, x), axis=1), (row_x, 1)), repeats=row_y, axis=1)
+    y2 = np.repeat(np.reshape(np.sum(np.multiply(y, y), axis=1), (row_y, 1)), repeats=row_x, axis=1).T
+    dis = x2 + y2 - 2 * xy
+    return dis
 
 
 def counterclockwise_rotate(x, y, intersection, theta):
