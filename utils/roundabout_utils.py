@@ -794,6 +794,7 @@ def save_per_ts_img(img_dir, img_path, ita1, ref_paths, path1, path2, theta1,
 
 def get_csv_edges(c_data, ita_info, ref_frenet, csv_key, img_dir, ref_paths):
     edges = dict()
+    print('saving edges info')
     for ego_id, ego_data in c_data.items():
         # print(ego_id)
         # if in starting area and have at least 69 frames behind,

@@ -123,7 +123,7 @@ def save_it_path(div_path_points, map_file):
 
         div_paths = ref_path.split('-')
         if len(div_paths) == 1:
-            ref_path_points[ref_path] = div_path_points[int(div_paths[0])]
+            ref_path_points[ref_path] = div_path_points[int(div_paths[0])].copy()
         else:
             ref_path_data0 = div_path_points[int(div_paths[0])].copy()
             ref_path_data1 = div_path_points[int(div_paths[1])].copy()
@@ -171,6 +171,7 @@ def save_it_path(div_path_points, map_file):
 
 
 def get_track_label(dir_name, ref_path_points, ref_frenet):
+    print('saving each agent\'s info')
     csv_dict = dict()
     # collect data to construct a dict from all csv
     paths = glob.glob(os.path.join(dir_name, '*.csv'))
