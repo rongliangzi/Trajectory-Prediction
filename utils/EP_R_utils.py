@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from utils.roundabout_utils import nearest_c_point, on_press
 from utils.intersection_utils import cal_dis
 import re
+from utils.roundabout_utils import get_circle
 y_range = {0: [1025.27, 1044.25], 1: (1044.513, 976.992), 6: (1005.624, 989.106), 8: (980.936, 1008.159),
            10: (1012.872, 1002.185), 11: (998.668, 1025.163)}
 x_range = {2: (1014.832, 965.23), 3: (960.058, 971.693), 4: (990.483, 968.049), 5: (968.009, 1015.247),
@@ -114,9 +115,42 @@ def read_funcs(func_file, wp_n=200):
     return ref_path_id_points
 
 
+def get_insert_circle(v1, v2, v3, c_insert_k):
+    x0, y0, r = get_circle(v1, v2, v3)
+    theta_p = math.atan2(v1[1] - y0, v1[0] - x0)
+    if theta_p < 0:
+        theta_p += math.pi * 2
+    theta_c = math.atan2(v2[1] - y0, v2[0] - x0)
+    if theta_c < 0:
+        theta_c += math.pi * 2
+    if theta_c < theta_p:
+        theta_c += math.pi*2
+    p1 = []
+    for j in range(1, c_insert_k):
+        x_rot, y_rot = counterclockwise_rotate(v1[0], v1[1], (x0, y0),
+                                               (theta_c - theta_p) * j / c_insert_k)
+        p1.append([x_rot, y_rot])
+    p1 = np.array(p1)
+
+    theta_n = math.atan2(v3[1] - y0, v3[0] - x0)
+    if theta_n < 0:
+        theta_n += math.pi * 2
+    if theta_n < theta_c:
+        theta_n += math.pi * 2
+    p2 = []
+    for j in range(1, c_insert_k):
+        x_rot, y_rot = counterclockwise_rotate(v2[0], v2[1], (x0, y0),
+                                               (theta_n - theta_c) * j / c_insert_k)
+        p2.append([x_rot, y_rot])
+    p2 = np.array(p2)
+    return p1, p2
+
+
 def get_r_path(div_path_points, map_file):
     ref_path_points = dict()
     for ref_path in r_paths:
+        # if ref_path != '2-12-4':
+        #     continue
         fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
         map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
         div_paths = ref_path.split('-')
@@ -136,10 +170,15 @@ def get_r_path(div_path_points, map_file):
             elif ref_path == '3-1':
                 ref_path_data1[0] = (ref_path_data0[-1] + ref_path_data1[1]) / 2
             elif ref_path == '6-1':
+                ref_path_data1[:, 0] -= 0.1
                 ref_path_data1[0] = (ref_path_data0[-1] + ref_path_data1[1]) / 2
             elif ref_path == '8-5':
-                ref_path_data1[0] = (ref_path_data0[-1] + ref_path_data1[1]) / 2
-                ref_path_data0[-1] = (ref_path_data0[-2] + ref_path_data1[0]) / 2
+                p = [1003.03, 1008.26]
+                p1, p2 = get_insert_circle(ref_path_data1[8], p, ref_path_data0[-2], 10)
+                ref_path_data0 = ref_path_data0[:-1]
+                ref_path_data1 = np.vstack((p2[::-1], np.array(p), p1[::-1], ref_path_data1[8:]))
+            elif ref_path == '2-0':
+                ref_path_data1[:, 1] -= 0.12
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1))
         elif len(div_paths) == 4:
             ref_path_data0 = div_path_points[int(div_paths[0])].copy()
@@ -163,11 +202,19 @@ def get_r_path(div_path_points, map_file):
 
             ref_path_data3 = ref_path_data3[j3:]
             if ref_path == '3-1-9-5':
-                ref_path_data3[1] = (ref_path_data3[3] + ref_path_data2[-1]) / 2
-                ref_path_data3[0] = (ref_path_data3[1] + ref_path_data2[-1]) / 2
-                ref_path_data3[2] = (ref_path_data3[1] + ref_path_data3[3]) / 2
+                ref_path_data1[0] = (ref_path_data1[1] + ref_path_data0[-1])/2
+                ref_path_data3[:, 1] += 0.35
+                ref_path_data3 = ref_path_data3[4:]
+                p = [982, 1001.8]
+                p1, p2 = get_insert_circle(ref_path_data2[-1], p, ref_path_data3[0], 10)
+                ref_path_data3 = np.vstack((p1, np.array(p), p2, ref_path_data3))
+
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1, ref_path_data2,
                                                    ref_path_data3))
+            plt.plot([p[0] for p in ref_path_data0], [p[1] for p in ref_path_data0], c='r')
+            plt.plot([p[0] for p in ref_path_data1], [p[1] for p in ref_path_data1], c='g')
+            plt.plot([p[0] for p in ref_path_data2], [p[1] for p in ref_path_data2], c='b')
+            plt.plot([p[0] for p in ref_path_data3], [p[1] for p in ref_path_data3], c='r')
         elif len(div_paths) == 6:
             ref_path_data0 = div_path_points[int(div_paths[0])].copy()
             ref_path_data1 = div_path_points[int(div_paths[1])].copy()
@@ -198,9 +245,23 @@ def get_r_path(div_path_points, map_file):
             dis5 = cal_dis(ref_path_data4, ref_path_data5)
             min_id5 = np.argmin(dis5)
             i5, j5 = min_id5 // dis5.shape[1], min_id5 % dis5.shape[1]
+            ref_path_data0[:, 1] -= 0.017
             ref_path_data4 = ref_path_data4[j4:i5]
 
             ref_path_data5 = ref_path_data5[j5:]
+            ref_path_data2 = np.vstack((ref_path_data2[:-1], np.array([976.3740876224332, 1013.0162002656417])))
+            ref_path_data4[:, 0] -= 0.05
+            ref_path_data5[:, 0] -= 0.037
+            p = [976.480695941081, 1013.138906751151]
+            p1, p2 = get_insert_circle(ref_path_data2[-4], p, ref_path_data3[0], 10)
+            ref_path_data2 = ref_path_data2[:-3]
+            ref_path_data3 = np.vstack((p1, np.array(p), p2, ref_path_data3))
+            plt.plot([p[0] for p in ref_path_data0], [p[1] for p in ref_path_data0], c='r')
+            plt.plot([p[0] for p in ref_path_data1], [p[1] for p in ref_path_data1], c='g')
+            plt.plot([p[0] for p in ref_path_data2], [p[1] for p in ref_path_data2], c='b', marker='x')
+            plt.plot([p[0] for p in ref_path_data3], [p[1] for p in ref_path_data3], c='r', marker='x')
+            plt.plot([p[0] for p in ref_path_data4], [p[1] for p in ref_path_data4], c='g')
+            plt.plot([p[0] for p in ref_path_data5], [p[1] for p in ref_path_data5], c='b')
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1, ref_path_data2,
                                                    ref_path_data3, ref_path_data4, ref_path_data5))
         else:
@@ -218,32 +279,57 @@ def get_r_path(div_path_points, map_file):
             ref_path_data1 = ref_path_data1[j1:i2 + 1]
             ref_path_data2 = ref_path_data2[j2:]
             if ref_path == '1-9-5':
-                ref_path_data2[1] = (ref_path_data2[3]+ref_path_data1[-1])/2
-                ref_path_data2[0] = (ref_path_data2[1]+ref_path_data1[-1])/2
-                ref_path_data2[2] = (ref_path_data2[1]+ref_path_data2[3])/2
+                ref_path_data2[:, 1] += 0.4
+                ref_path_data2 = ref_path_data2[4:]
+                p = [982, 1001.8]
+                p1, p2 = get_insert_circle(ref_path_data1[-1], p, ref_path_data2[0], 10)
+                ref_path_data2 = np.vstack((p1, np.array(p), p2, ref_path_data2))
             elif ref_path == '3-1-4':
                 ref_path_data1[0] = (ref_path_data0[-1] + ref_path_data1[1]) / 2
-                ref_path_data2[1] = (ref_path_data1[-1] + ref_path_data2[2]) / 2
                 ref_path_data2 = ref_path_data2[1:]
+                p = [976.23, 1012.95]
+                p1, p2 = get_insert_circle(ref_path_data2[1], p, ref_path_data1[-1], 10)
+                ref_path_data2 = np.vstack((p2[::-1], np.array(p), p1[::-1], ref_path_data2[1:]))
             elif ref_path == '5-11-2':
+                p = [993.67, 1004.37]
+                p1, p2 = get_insert_circle(ref_path_data0[-1], p, ref_path_data1[1], 10)
+                ref_path_data1 = np.vstack((p1, np.array(p), p2, ref_path_data1[1:]))
                 ref_path_data2 = ref_path_data2[1:]
             elif ref_path == '7-11-2':
+                ref_path_data0[:, 1] += 0.05
                 ref_path_data2 = ref_path_data2[1:]
+                ref_path_data2[:, 1] -= 0.05
             elif ref_path == '7-11-4':
-                ref_path_data1 = ref_path_data1[:-1]
+                ref_path_data0[:, 1] += 0.05
+                p = [990.64, 1019.67]
+                p1, p2 = get_insert_circle(ref_path_data1[-4], p, ref_path_data2[1], 10)
+                ref_path_data1 = ref_path_data1[:-4]
+                ref_path_data2 = np.vstack((p1, np.array(p), p2, ref_path_data2[2:]))
             elif ref_path == '7-13-5':
-                ref_path_data2[0] = (ref_path_data2[1]+ref_path_data1[-1])/2
+                ref_path_data1[:, 1] += 0.01
+                ref_path_data2[:, 1] += 0.032
+                ref_path_data2 = ref_path_data2[1:]
             elif ref_path == '5-11-0':
-                ref_path_data1[-1] = (ref_path_data1[-2]+ref_path_data2[0])/2
+                p = [993.67, 1004.37]
+                p1, p2 = get_insert_circle(ref_path_data0[-1], p, ref_path_data1[1], 10)
+                ref_path_data1 = np.vstack((p1, np.array(p), p2, ref_path_data1[1:-1]))
+                ref_path_data2[:, 1] -= 0.19
             elif ref_path == '7-11-0':
-                ref_path_data1[-1] = (ref_path_data1[-2]+ref_path_data2[0])/2
+                ref_path_data0[:, 1] += 0.05
+                ref_path_data2[:, 1] -= 0.19
+                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[0]) / 2
+            elif ref_path == '2-12-4':
+                ref_path_data0[:, 1] -= 0.017
+            plt.plot([p[0] for p in ref_path_data0], [p[1] for p in ref_path_data0], c='r')
+            plt.plot([p[0] for p in ref_path_data1], [p[1] for p in ref_path_data1], c='g')
+            plt.plot([p[0] for p in ref_path_data2], [p[1] for p in ref_path_data2], c='b')
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1, ref_path_data2))
         xp, yp = [point[0] for point in ref_path_points[ref_path]], [point[1] for point in ref_path_points[ref_path]]
         xy_p = np.array([[x, y] for x, y in zip(xp, yp)])
-        plt.plot(xp, yp, linewidth=2)
         plt.text(xp[0], yp[0], 'start', fontsize=20)
         plt.text(xp[-1], yp[-1], 'end', fontsize=20)
-        plt.plot(xp, yp, linewidth=1, zorder=30, marker='x')
+        # plt.plot(xp, yp, linewidth=1, zorder=30, marker='x')
+        plt.title(ref_path)
         # fig.canvas.mpl_connect('button_press_event', on_press)
         # plt.show()
         plt.savefig('D:/Dev/UCB task/path_imgs/EP/{}.png'.format(ref_path))

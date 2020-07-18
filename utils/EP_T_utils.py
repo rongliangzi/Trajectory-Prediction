@@ -42,6 +42,8 @@ def read_funcs(func_file, wp_n=200):
                 p = np.poly1d(coef)
                 yp = np.arange(y_range[line_id][0], y_range[line_id][1], (y_range[line_id][1]-y_range[line_id][0])/wp_n)
                 xp = p(yp)
+                if line_id == 19:
+                    xp -= 0.1
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2)
@@ -60,6 +62,8 @@ def read_funcs(func_file, wp_n=200):
                 p = np.poly1d(coef)
                 xp = np.arange(x_range[line_id][0], x_range[line_id][1], (x_range[line_id][1]-x_range[line_id][0])/wp_n)
                 yp = p(xp)
+                if line_id == 18:
+                    yp += 0.15
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2)
@@ -118,6 +122,8 @@ def read_funcs(func_file, wp_n=200):
 def save_it_path(div_path_points, map_file):
     ref_path_points = dict()
     for ref_path in it_paths:
+        # if ref_path != '19-24-17':
+        #     continue
         fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
         map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
 
@@ -140,17 +146,22 @@ def save_it_path(div_path_points, map_file):
             ref_path_data1 = ref_path_data1[j1:i2 + 1]
             ref_path_data2 = ref_path_data2[j2:]
             if ref_path == '17-22-20':
-                ref_path_data0 = np.vstack((ref_path_data0[:-1], (ref_path_data0[-2]+ref_path_data1[0])/2))
-                ref_path_data1[-1] = (ref_path_data1[-2]+ref_path_data2[2])/2
+                ref_path_data0[:, 1] += 0.235
+                # ref_path_data1[-1] = (ref_path_data1[-2]+ref_path_data2[2])/2
                 ref_path_data2 = ref_path_data2[1:]
+                ref_path_data2[:, 0] += 0.01
             elif ref_path == '19-21-18':
-                ref_path_data0[-1] = (ref_path_data0[-2]+ref_path_data1[0])/2
-                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[1]) / 2
-                ref_path_data2 = ref_path_data2[1:]
+                # ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[1]) / 2
+                # ref_path_data2 = ref_path_data2[1:]
+                ref_path_data0[:, 0] -= 0.04
+                ref_path_data2[:, 1] += 0.01
+                pass
             elif ref_path == '19-24-17':
+                ref_path_data0[:, 0] -= 0.1
                 ref_path_data1[0] = (ref_path_data0[-1]+ref_path_data1[1])/2
-                ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[1])/2
                 ref_path_data2 = ref_path_data2[1:]
+                ref_path_data2[:, 1] += 0.483
+
             elif ref_path == '15-23-20':
                 ref_path_data1[-2] = (ref_path_data1[-4] + ref_path_data2[0])/2
                 ref_path_data1[-1] = (ref_path_data1[-2] + ref_path_data2[0])/2
@@ -158,16 +169,29 @@ def save_it_path(div_path_points, map_file):
             ref_path_points[ref_path] = np.vstack((ref_path_data0, ref_path_data1, ref_path_data2))
         xp, yp = [point[0] for point in ref_path_points[ref_path]], [point[1] for point in ref_path_points[ref_path]]
         xy_p = np.array([[x, y] for x, y in zip(xp, yp)])
-        plt.plot(xp, yp, linewidth=2)
         plt.text(xp[0], yp[0], 'start', fontsize=20)
         plt.text(xp[-1], yp[-1], 'end', fontsize=20)
         plt.plot(xp, yp, linewidth=1, zorder=30, marker='x')
+        plt.title(ref_path)
         # fig.canvas.mpl_connect('button_press_event', on_press)
         # plt.show()
         plt.savefig('D:/Dev/UCB task/path_imgs/EP/{}.png'.format(ref_path))
         plt.close()
         ref_path_points[ref_path] = xy_p
     return ref_path_points
+
+
+def visualize_ref_path(way_points, raw, map_file):
+    fig, axes = plt.subplots(1, 1, figsize=(16, 12), dpi=100)
+    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
+    xp, yp = [point[0] for point in way_points], [point[1] for point in way_points]
+
+    plt.text(xp[0], yp[0], 'start', fontsize=20)
+    plt.text(xp[-1], yp[-1], 'end', fontsize=20)
+    plt.plot(xp, yp, linewidth=1, zorder=30, marker='x', c='r')
+    plt.plot([point[0] for point in raw], [point[1] for point in raw], linewidth=1, zorder=30, marker='x', c='g')
+    fig.canvas.mpl_connect('button_press_event', on_press)
+    plt.show()
 
 
 def get_track_label(dir_name, ref_path_points, ref_frenet):

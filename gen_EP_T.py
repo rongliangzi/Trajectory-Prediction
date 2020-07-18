@@ -8,8 +8,10 @@ if __name__ == '__main__':
     func_file = 'D:/Dev/UCB task/Roundabout_EP_final/ref_path_funcs.txt'
     map_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Roundabout_EP.osm'
     EPT_ref_path_points = read_funcs(func_file)
-    insert_k = 2
-    EPT_ref_path_points = fix_ref_path(EPT_ref_path_points, 'EPT', insert_k=insert_k)
+    insert_k = 10
+    # raw = EPT_ref_path_points['17-13']
+    EPT_ref_path_points = fix_ref_path(EPT_ref_path_points, 'EPT', insert_k=insert_k, max_dis=2e-2)
+    # visualize_ref_path(EPT_ref_path_points['17-13'], raw, map_path)
     EPT_interaction_points = {'12-13_12-16': ((1054.42, 1008.51), 'split_0'),
                               '12-13_17-13': ((1082.95, 1006.94), 'merging_0'),
                               '12-16_14-11': ((1065.91, 1013.12), 'crossing_0'),

@@ -485,27 +485,42 @@ def get_circle(p1, p2, p3):
     x32 = p3[0] - p2[0]
     y32 = p3[1] - p2[1]
     # three colinear
-    # if x21 * y32 - x32 * y21 == 0:
-    #     return None
+    if x21 * y32 - x32 * y21 == 0:
+        return None
     xy21 = p2[0] * p2[0] - p1[0] * p1[0] + p2[1] * p2[1] - p1[1] * p1[1]
     xy32 = p3[0] * p3[0] - p2[0] * p2[0] + p3[1] * p3[1] - p2[1] * p2[1]
-    y0 = (x32 * xy21 - x21 * xy32) / 2 * (y21 * x32 - y32 * x21)
+    y0 = (x32 * xy21 - x21 * xy32) / (2 * (y21 * x32 - y32 * x21))
     x0 = (xy21 - 2 * y0 * y21) / (2.0 * x21)
     r = ((p1[0] - x0) ** 2 + (p1[1] - y0) ** 2) ** 0.5
     return x0, y0, r
 
 
-def fix_ref_path(ref_path_points, scene='', insert_k=10):
+def fix_ref_path(ref_path_points, scene='', insert_k=10, max_dis=-1):
     if scene == 'FT':
         ref_path_points['1-10'][161] = (ref_path_points['1-10'][160] + ref_path_points['1-10'][162]) / 2
         ref_path_points['1-12'][136] = (ref_path_points['1-12'][135] + ref_path_points['1-12'][137])/2
     c_insert_k = insert_k
-    l_insert_k = insert_k
     for k, v in ref_path_points.items():
         i = 1
         while i < len(v)-1:
             pre = v[i] - v[i-1]
             post = v[i+1] - v[i]
+            dis1 = ((pre**2).sum())**0.5
+            dis2 = ((post**2).sum())**0.5
+            if dis1 > max_dis > 0:
+                insert_k1 = int(1 + dis1 / max_dis)
+            elif max_dis > dis1 > 0:
+                i += 1
+                continue
+            else:
+                insert_k1 = insert_k
+            if dis2 > max_dis > 0:
+                insert_k2 = int(1 + dis2 / max_dis)
+            elif max_dis > dis2 > 0:
+                i += 1
+                continue
+            else:
+                insert_k2 = insert_k
             theta1 = math.atan2(pre[1], pre[0])
             theta2 = math.atan2(post[1], pre[0])
             theta = ((theta2 - theta1)*180/math.pi)
@@ -513,7 +528,7 @@ def fix_ref_path(ref_path_points, scene='', insert_k=10):
                 theta -= 360
             elif theta < -180:
                 theta += 360
-            if abs(theta) > 45:
+            if abs(theta) > 30:
                 print(theta)
                 x0, y0, r = get_circle(v[i-1], v[i], v[i+1])
                 theta_p = math.atan2(v[i-1][1]-y0, v[i-1][0]-x0)
@@ -523,9 +538,9 @@ def fix_ref_path(ref_path_points, scene='', insert_k=10):
                 if theta_c < 0:
                     theta_c += math.pi * 2
                 p1 = []
-                for j in range(1, c_insert_k):
+                for j in range(1, insert_k1):
                     x_rot, y_rot = counterclockwise_rotate(v[i - 1][0], v[i - 1][1], (x0, y0),
-                                                           (theta_c - theta_p) * j / c_insert_k)
+                                                           (theta_c - theta_p) * j / insert_k1)
                     p1.append([x_rot, y_rot])
                 p1 = np.array(p1)
 
@@ -533,28 +548,43 @@ def fix_ref_path(ref_path_points, scene='', insert_k=10):
                 if theta_n < 0:
                     theta_n += math.pi * 2
                 p2 = []
-                for j in range(1, c_insert_k):
-                    x_rot, y_rot = counterclockwise_rotate(v[i-1][0], v[i-1][1], (x0, y0),
-                                                           (theta_n-theta_c)*j/c_insert_k)
+                for j in range(1, insert_k2):
+                    x_rot, y_rot = counterclockwise_rotate(v[i][0], v[i][1], (x0, y0),
+                                                           (theta_n-theta_c) * j / insert_k2)
                     p2.append([x_rot, y_rot])
                 p2 = np.array(p2)
                 v = np.vstack((v[:i], p1, v[i], p2, v[i+1:]))
                 i += c_insert_k * 2 - 1
             else:
                 p1 = []
-                for j in range(1, l_insert_k):
-                    delta_x = (v[i][0]-v[i-1][0])/l_insert_k
-                    delta_y = (v[i][1]-v[i-1][1])/l_insert_k
+                for j in range(1, insert_k1):
+                    delta_x = (v[i][0]-v[i-1][0])/insert_k1
+                    delta_y = (v[i][1]-v[i-1][1])/insert_k1
                     p1.append([v[i-1][0]+j*delta_x, v[i-1][1]+j*delta_y])
                 p1 = np.array(p1)
                 p2 = []
-                for j in range(1, l_insert_k):
-                    delta_x = (v[i+1][0]-v[i][0])/l_insert_k
-                    delta_y = (v[i+1][1]-v[i][1])/l_insert_k
+                for j in range(1, insert_k2):
+                    delta_x = (v[i+1][0]-v[i][0])/insert_k2
+                    delta_y = (v[i+1][1]-v[i][1])/insert_k2
                     p2.append([v[i][0]+j*delta_x, v[i][1]+j*delta_y])
                 p2 = np.array(p2)
                 v = np.vstack((v[:i], p1, v[i], p2, v[i + 1:]))
-                i += l_insert_k * 2
+                i += insert_k1 + insert_k2
+        i = 1
+        while i < len(v):
+            pre = v[i] - v[i - 1]
+            dis1 = ((pre ** 2).sum()) ** 0.5
+            if dis1 > max_dis > 0:
+                insert_k1 = int(1 + dis1 / max_dis)
+                p1 = []
+                for j in range(1, insert_k1):
+                    delta_x = (v[i][0] - v[i - 1][0]) / insert_k1
+                    delta_y = (v[i][1] - v[i - 1][1]) / insert_k1
+                    p1.append([v[i - 1][0] + j * delta_x, v[i - 1][1] + j * delta_y])
+                p1 = np.array(p1)
+                v = np.vstack((v[:i], p1, v[i:]))
+                i += insert_k1
+            i += 1
         ref_path_points[k] = v
     return ref_path_points
 

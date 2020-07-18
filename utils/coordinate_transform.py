@@ -96,6 +96,9 @@ def get_xy(s, d, path_s, path_wp, proj=None):
 
     prev_wp -= 1
     next_wp = prev_wp + 1
+    if prev_wp == len(path_s)-1:
+        prev_wp -= 1
+        next_wp -= 1
     heading = math.atan2((path_wp[next_wp][1] - path_wp[prev_wp][1]), (path_wp[next_wp][0]-path_wp[prev_wp][0]))
     # the x,y,s along the segment
     if proj is None:

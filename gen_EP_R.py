@@ -1,5 +1,5 @@
 from utils.EP_R_utils import *
-from utils.EP_T_utils import get_track_label
+from utils.EP_T_utils import get_track_label, visualize_ref_path
 from utils.roundabout_utils import fix_ref_path, save_interaction_bg_figs, save_complete_ref_path_fig,\
     crop_interaction_figs, ref_paths2frenet, save_ts_theta, get_csv_edges
 import pickle
@@ -9,8 +9,10 @@ if __name__ == '__main__':
     func_file = 'D:/Dev/UCB task/Roundabout_EP_final/ref_path_funcs.txt'
     map_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Roundabout_EP.osm'
     EPR_ref_path_points = read_funcs(func_file)
-    # insert_k = 2
-    # EPR_ref_path_points = fix_ref_path(EPR_ref_path_points, 'EPR', insert_k=insert_k)
+    insert_k = 10
+    # raw = EPR_ref_path_points['3-9']
+    EPR_ref_path_points = fix_ref_path(EPR_ref_path_points, 'EPR', insert_k=insert_k, max_dis=2e-2)
+    # visualize_ref_path(EPR_ref_path_points['3-9'], raw, map_path)
     EPR_interaction_points = {'1-4_1-6': (((976.25, 1013.14), 'split_0'),),
                               '1-4_1-9': (((976.25, 1013.14), 'split_0'),),
                               '1-4_10-2': (((970.28, 1034.54), 'crossing_0'),),
