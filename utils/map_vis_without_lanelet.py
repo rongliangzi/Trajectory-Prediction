@@ -72,6 +72,38 @@ def set_visible_area(point_dict, axes):
     axes.set_ylim([min_y - 10, max_y + 10])
     # print('min_x:', min_x, 'max_x:', max_x)
     # print('min_y:', min_y, 'max_y:', max_y)
+    return min_x - 10, max_x + 10, min_y - 10, max_y + 10
+
+
+def dis(p1, p2):
+    return ((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)**0.5
+
+
+def link_road(points):
+    l1, l2 = -1, -2
+    while l1 != l2:
+        l1 = len(points)
+        i = 0
+        while i < len(points):
+            j = i+1
+            while j < len(points):
+                if dis(points[i][0], points[j][-1]) < 2:
+                    points[i] = points[j]+points[i]
+                    points.pop(j)
+                elif dis(points[i][-1], points[j][0]) < 2:
+                    points[i] += points[j]
+                    points.pop(j)
+                elif dis(points[i][0], points[j][0]) < 2:
+                    points[i] = points[j][::-1]+points[i]
+                    points.pop(j)
+                elif dis(points[i][-1], points[j][-1]) < 2:
+                    points[i] += points[j][::-1]
+                    points.pop(j)
+                else:
+                    j += 1
+            i += 1
+        l2 = len(points)
+    return points
 
 
 def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
@@ -79,7 +111,7 @@ def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
     assert isinstance(axes, matplotlib.axes.Axes)
 
     axes.set_aspect('equal', adjustable='box')
-    axes.patch.set_facecolor('lightgrey')
+    axes.patch.set_facecolor('white')
 
     projector = LL2XYProjector(lat_origin, lon_origin)
 
@@ -91,10 +123,10 @@ def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
         point.x, point.y = projector.latlon2xy(float(node.get('lat')), float(node.get('lon')))
         point_dict[int(node.get('id'))] = point
 
-    set_visible_area(point_dict, axes)
+    min_x, max_x, min_y, max_y = set_visible_area(point_dict, axes)
 
     unknown_linestring_types = list()
-
+    road_points = []
     for way in e.findall('way'):
         way_type = get_type(way)
         if way_type is None:
@@ -104,26 +136,29 @@ def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
         elif way_type == "line_thin":
             way_subtype = get_subtype(way)
             if way_subtype == "dashed":
-                type_dict = dict(color="white", linewidth=1, zorder=10, dashes=[10, 10])
+                type_dict = dict(color="blue", linewidth=1, zorder=10, dashes=[10, 10])
             else:
-                type_dict = dict(color="white", linewidth=1, zorder=10)
+                type_dict = dict(color="blue", linewidth=1, zorder=10)
         elif way_type == "line_thick":
             way_subtype = get_subtype(way)
             if way_subtype == "dashed":
-                type_dict = dict(color="white", linewidth=2, zorder=10, dashes=[10, 10])
+                type_dict = dict(color="blue", linewidth=2, zorder=10, dashes=[10, 10])
             else:
-                type_dict = dict(color="white", linewidth=2, zorder=10)
+                type_dict = dict(color="blue", linewidth=2, zorder=10)
         elif way_type == "pedestrian_marking":
-            type_dict = dict(color="white", linewidth=1, zorder=10, dashes=[5, 10])
+            type_dict = dict(color="red", linewidth=1, zorder=10)
         elif way_type == "bike_marking":
-            type_dict = dict(color="white", linewidth=1, zorder=10, dashes=[5, 10])
+            type_dict = dict(color="blue", linewidth=1, zorder=10, dashes=[5, 10])
         elif way_type == "stop_line":
-            type_dict = dict(color="white", linewidth=3, zorder=10)
+            type_dict = dict(color="red", linewidth=3, zorder=10)
         elif way_type == "virtual":
+            pass
             type_dict = dict(color="blue", linewidth=1, zorder=10, dashes=[2, 5])
         elif way_type == "road_border":
+            pass
             type_dict = dict(color="black", linewidth=1, zorder=10)
         elif way_type == "guard_rail":
+            pass
             type_dict = dict(color="black", linewidth=1, zorder=10)
         elif way_type == "traffic_sign":
             continue
@@ -133,7 +168,90 @@ def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
             continue
 
         x_list, y_list = get_x_y_lists(way, point_dict)
-        plt.plot(x_list, y_list, **type_dict)
+        if way_type not in ["virtual", "road_border"]:
+            plt.plot(x_list, y_list, **type_dict)
 
+        if way_type == 'curbstone':
+            xy = [(x, y) for x, y in zip(x_list, y_list)]
+            flag = 0
+            for i, xy0 in enumerate(road_points):
+                if dis(xy[0], xy0[-1]) < 2:
+                    road_points[i] += xy
+                    flag = 1
+                    break
+                elif dis(xy0[0], xy[-1]) < 2:
+                    road_points[i] = xy + xy0
+                    flag = 1
+                    break
+                elif dis(xy[0], xy0[0]) < 2:
+                    road_points[i] = xy[::-1] + xy0
+                    flag = 1
+                    break
+                elif dis(xy[-1], xy0[-1]) < 2:
+                    road_points[i] = xy0 + xy[::-1]
+                    flag = 1
+                    break
+            if flag == 0:
+                road_points.append(xy)
+    road_points = link_road(road_points)
+    mdis = 25
+    for i, road in enumerate(road_points):
+        # print(road[0][0], min_x, max_x)
+        # plt.scatter(road[0][0], road[0][1], zorder=30)
+        pre = None
+        post = None
+        corner_x = None
+        corner_y = None
+        if dis(road[0], road[-1]) < 5:
+            continue
+        if road[0][0]-min_x < mdis:
+            corner_x = min_x
+            y = (road[1][1]-road[0][1])/(road[1][0]-road[0][0])*(corner_x-road[1][0])+road[1][1]
+            pre = [[min_x, y]]
+
+        elif max_x - road[0][0] < mdis:
+            corner_x = max_x
+            y = (road[1][1] - road[0][1]) / (road[1][0] - road[0][0]) * (corner_x - road[1][0]) + road[1][1]
+            pre = [[max_x, y]]
+
+        elif road[0][1] - min_y < mdis:
+            corner_y = min_y
+            x = (road[1][0] - road[0][0])/(road[1][1] - road[0][1])*(corner_y-road[1][1])+road[1][0]
+            pre = [[x, min_y]]
+
+        elif max_y - road[0][1] < mdis:
+            corner_y = max_y
+            x = (road[1][0] - road[0][0]) / (road[1][1] - road[0][1]) * (corner_y - road[1][1]) + road[1][0]
+            pre = [[x, max_y]]
+
+        # plt.scatter(road[-1][0], road[-1][1])
+        if road[-1][0] - min_x < mdis:
+            corner_x = min_x
+            y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
+            post = [[min_x, y]]
+        elif max_x - road[-1][0] < mdis:
+            corner_x = max_x
+            y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
+            post = [[max_x, y]]
+
+        elif road[-1][1] - min_y < mdis:
+            corner_y = min_y
+            x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
+            post = [[x, min_y]]
+
+        elif max_y - road[-1][1] < mdis:
+            corner_y = max_y
+            x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
+            post = [[x, max_y]]
+
+        if pre:
+            road_points[i] = pre + road_points[i]
+        if post:
+            road_points[i] = road_points[i] + post
+        if pre and post:
+            road_points[i] += [[corner_x, corner_y]]
+    for xy in road_points:
+        area = matplotlib.patches.Polygon(xy, closed=True, color='lightgrey')
+        axes.add_patch(area)
     if len(unknown_linestring_types) != 0:
         print("Found the following unknown types, did not plot them: " + str(unknown_linestring_types))

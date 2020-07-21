@@ -133,14 +133,14 @@ if __name__ == '__main__':
                               '7-9_8-9': (((1002.7, 1008.3), 'merging_0'),),
                               }
 
-    pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_xy_EPR.pkl', 'wb')
-    pickle.dump(EPR_ref_path_points, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_xy_EPR.pkl', 'wb')
+    # pickle.dump(EPR_ref_path_points, pickle_file)
+    # pickle_file.close()
 
     ref_point_frenet = ref_paths2frenet(EPR_ref_path_points)
-    pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_frenet_EPR.pkl', 'wb')
-    pickle.dump(ref_point_frenet, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_frenet_EPR.pkl', 'wb')
+    # pickle.dump(ref_point_frenet, pickle_file)
+    # pickle_file.close()
 
     EPR_interactions = dict()
     for k, vs in EPR_interaction_points.items():
@@ -162,30 +162,30 @@ if __name__ == '__main__':
             # print(v[0], EPR_ref_path_points[path1][first_id], EPR_ref_path_points[path2][second_id])
             EPR_interactions[path1][path2].append((v[0], first_id, second_id, v[1]))
             EPR_interactions[path2][path1].append((v[0], second_id, first_id, v[1]))
-    pickle_file = open('D:/Dev/UCB task/pickle/EPR/interaction_EPR.pkl', 'wb')
-    pickle.dump(EPR_interactions, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/interaction_EPR.pkl', 'wb')
+    # pickle.dump(EPR_interactions, pickle_file)
+    # pickle_file.close()
     fig_dir = 'D:/Dev/UCB task/intersection_figs/'
-    save_interaction_bg_figs(EPR_ref_path_points, EPR_interactions, map_path, fig_dir+'roundabout_EPR/')
+    # save_interaction_bg_figs(EPR_ref_path_points, EPR_interactions, map_path, fig_dir+'roundabout_EPR/')
 
     # generate intersection figures
-    img_save_dir = fig_dir + 'roundabout_EPR_crop/'
+    img_save_dir = fig_dir + 'high-res_roundabout_EPR_crop/'
     rotate_n = 0
     crop_interaction_figs(EPR_ref_path_points, EPR_interactions, ref_point_frenet, img_save_dir, rotate_n)
-    xs = 950
-    ys = 960
-    save_complete_ref_path_fig(EPR_ref_path_points, fig_dir+'/single_EPR/', (xs, 1030), (ys, 1060))
-    csv_data = get_track_label('D:/Dev/UCB task/Roundabout_EP_final/track_R/',
-                               EPR_ref_path_points, ref_point_frenet)
-    pickle_file = open('D:/Dev/UCB task/pickle/EPR/track_path_frenet_EPR.pkl', 'wb')
-    pickle.dump(csv_data, pickle_file)
-    pickle_file.close()
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/EPR/ts_theta_EPR.pkl')
-    # save edge info
-    for k, v in csv_data.items():
-        print(k)
-        split_edges = get_csv_edges(v, EPR_interactions, ref_point_frenet, k,
-                                    img_save_dir + k + '/', EPR_ref_path_points)
-        pickle_file = open('D:/Dev/UCB task/pickle/EPR/edges_EPR_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    # xs = 950
+    # ys = 960
+    # save_complete_ref_path_fig(EPR_ref_path_points, fig_dir+'/single_EPR/', (xs, 1030), (ys, 1060))
+    # csv_data = get_track_label('D:/Dev/UCB task/Roundabout_EP_final/track_R/',
+    #                            EPR_ref_path_points, ref_point_frenet)
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/track_path_frenet_EPR.pkl', 'wb')
+    # pickle.dump(csv_data, pickle_file)
+    # pickle_file.close()
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/EPR/ts_theta_EPR.pkl')
+    # # save edge info
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, EPR_interactions, ref_point_frenet, k,
+    #                                 img_save_dir + k + '/', EPR_ref_path_points)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/EPR/edges_EPR_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

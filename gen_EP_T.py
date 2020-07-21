@@ -46,30 +46,30 @@ if __name__ == '__main__':
         print(v[0], EPT_ref_path_points[path1][first_id], EPT_ref_path_points[path2][second_id])
         EPT_interactions[path1][path2] = [(v[0], first_id, second_id, v[1])]
         EPT_interactions[path2][path1] = [(v[0], second_id, first_id, v[1])]
-    pickle_file = open('D:/Dev/UCB task/pickle/EPT/interaction_EPT.pkl', 'wb')
-    pickle.dump(EPT_interactions, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPT/interaction_EPT.pkl', 'wb')
+    # pickle.dump(EPT_interactions, pickle_file)
+    # pickle_file.close()
     fig_dir = 'D:/Dev/UCB task/intersection_figs/'
-    save_interaction_bg_figs(EPT_ref_path_points, EPT_interactions, map_path, fig_dir+'roundabout_EPT/')
+    # save_interaction_bg_figs(EPT_ref_path_points, EPT_interactions, map_path, fig_dir+'roundabout_EPT/')
 
     # generate intersection figures
-    img_save_dir = fig_dir + 'roundabout_EPT_crop/'
+    img_save_dir = fig_dir + 'high-res_roundabout_EPT_crop/'
     rotate_n = 0
     crop_interaction_figs(EPT_ref_path_points, EPT_interactions, ref_point_frenet, img_save_dir, rotate_n)
-    xs = 1010
-    ys = 990
-    save_complete_ref_path_fig(EPT_ref_path_points, fig_dir+'/single_EPT/', (xs, 1110), (ys, 1055))
-    csv_data = get_track_label('D:/Dev/UCB task/Roundabout_EP_final/track_T/',
-                               EPT_ref_path_points, ref_point_frenet)
-    pickle_file = open('D:/Dev/UCB task/pickle/EPT/track_path_frenet_EPT.pkl', 'wb')
-    pickle.dump(csv_data, pickle_file)
-    pickle_file.close()
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/EPT/ts_theta_EPT.pkl')
-    # save edge info
-    for k, v in csv_data.items():
-        print(k)
-        split_edges = get_csv_edges(v, EPT_interactions, ref_point_frenet, k,
-                                    img_save_dir + k + '/', EPT_ref_path_points)
-        pickle_file = open('D:/Dev/UCB task/pickle/EPT/edges_EPT_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    # xs = 1010
+    # ys = 990
+    # save_complete_ref_path_fig(EPT_ref_path_points, fig_dir+'/single_EPT/', (xs, 1110), (ys, 1055))
+    # csv_data = get_track_label('D:/Dev/UCB task/Roundabout_EP_final/track_T/',
+    #                            EPT_ref_path_points, ref_point_frenet)
+    # pickle_file = open('D:/Dev/UCB task/pickle/EPT/track_path_frenet_EPT.pkl', 'wb')
+    # pickle.dump(csv_data, pickle_file)
+    # pickle_file.close()
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/EPT/ts_theta_EPT.pkl')
+    # # save edge info
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, EPT_interactions, ref_point_frenet, k,
+    #                                 img_save_dir + k + '/', EPT_ref_path_points)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/EPT/edges_EPT_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()

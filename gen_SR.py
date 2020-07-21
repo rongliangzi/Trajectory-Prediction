@@ -88,25 +88,25 @@ if __name__ == '__main__':
     insert_k = 10
     SR_ref_path_points = fix_ref_path(SR_ref_path_points, 'SR', insert_k=insert_k)
     plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
-    pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_xy_SR.pkl', 'wb')
-    pickle.dump(SR_ref_path_points, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_xy_SR.pkl', 'wb')
+    # pickle.dump(SR_ref_path_points, pickle_file)
+    # pickle_file.close()
     # a dict, call by path return an array(x,1): frenet of ref path points
-    ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
-    pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_frenet_SR.pkl', 'wb')
-    pickle.dump(ref_point_frenet, pickle_file)
-    pickle_file.close()
-    SR_interactions = find_all_interactions(SR_ref_path_points, k=insert_k)
-    pickle_file = open('D:/Dev/UCB task/pickle/SR/interaction_SR.pkl', 'wb')
-    pickle.dump(SR_interactions, pickle_file)
-    pickle_file.close()
+    # ref_point_frenet = ref_paths2frenet(SR_ref_path_points)
+    # pickle_file = open('D:/Dev/UCB task/pickle/SR/ref_path_frenet_SR.pkl', 'wb')
+    # pickle.dump(ref_point_frenet, pickle_file)
+    # pickle_file.close()
+    # SR_interactions = find_all_interactions(SR_ref_path_points, k=insert_k)
+    # pickle_file = open('D:/Dev/UCB task/pickle/SR/interaction_SR.pkl', 'wb')
+    # pickle.dump(SR_interactions, pickle_file)
+    # pickle_file.close()
     # visualize the ref paths with background
-    save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
-                             'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
+    # save_interaction_bg_figs(SR_ref_path_points, SR_interactions, map_dir+map_name,
+    #                          'D:/Dev/UCB task/intersection_figs/roundabout_SR/')
 
     # generate intersection figures
 
-    img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_SR_crop/'
+    img_save_dir = 'D:/Dev/UCB task/intersection_figs/high-res_roundabout_SR_crop/'
     rotate_n = 0
     # crop_interaction_figs(SR_ref_path_points, SR_interactions, ref_point_frenet, img_save_dir, rotate_n)
     xs = 900
@@ -116,27 +116,27 @@ if __name__ == '__main__':
     # plot_ref_path(map_dir + map_name, SR_ref_path_points, SR_starting_area_dict, SR_end_area_dict)
 
     # generate or load coordinate, velocity, frenet info of agents
-    if not os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'rb')
-        csv_data = pickle.load(pickle_file)
-        pickle_file.close()
-    else:
-        csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
-                                   SR_ref_path_points, ref_point_frenet,
-                                   SR_starting_area_dict, SR_end_area_dict)
-        pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'wb')
-        pickle.dump(csv_data, pickle_file)
-        pickle_file.close()
+    # if not os.path.exists('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl'):
+    #     pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'rb')
+    #     csv_data = pickle.load(pickle_file)
+    #     pickle_file.close()
+    # else:
+    #     csv_data = get_track_label('D:/Downloads/INTERACTION-Dataset-DR-v1_0/recorded_trackfiles/DR_USA_Roundabout_SR/',
+    #                                SR_ref_path_points, ref_point_frenet,
+    #                                SR_starting_area_dict, SR_end_area_dict)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/SR/track_path_frenet_SR.pkl', 'wb')
+    #     pickle.dump(csv_data, pickle_file)
+    #     pickle_file.close()
 
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/SR/ts_theta_SR.pkl')
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/SR/ts_theta_SR.pkl')
     # save edge info
-    for k, v in csv_data.items():
-        print(k)
-        split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet, k,
-                                    img_save_dir+k+'/', SR_ref_path_points)
-        pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
-        pickle.dump(split_edges, pickle_file)
-        pickle_file.close()
+    # for k, v in csv_data.items():
+    #     print(k)
+    #     split_edges = get_csv_edges(v, SR_interactions, ref_point_frenet, k,
+    #                                 img_save_dir+k+'/', SR_ref_path_points)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'wb')
+    #     pickle.dump(split_edges, pickle_file)
+    #     pickle_file.close()
         # pickle_file = open('D:/Dev/UCB task/pickle/SR/edges_SR_{}.pkl'.format(k), 'rb')
         # split_edges = pickle.load(pickle_file)
         # pickle_file.close()

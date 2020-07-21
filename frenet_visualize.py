@@ -44,13 +44,13 @@ def cal_max_delta(scene):
     frenet2xy_time = []
     start_t = time.time()
     for k, tracks in csv_data.items():
-        # if k != '007':
-        #     continue
+        if k != '007':
+            continue
         trans_xy = []
         raw_xy = []
         for trajectory_id, agent_dict in tracks.items():
-            # if trajectory_id != 61:
-            #     continue
+            if trajectory_id != 61:
+                continue
             car_path = agent_dict['ref path']
             ref_xy = ref_paths[car_path]
             max_ts = 0
@@ -77,7 +77,7 @@ def cal_max_delta(scene):
                     delta_xy = [(x, y), (trans_x, trans_y)]
             if max_delta > 0.05:
                 print(k, trajectory_id, max_ts, max_delta, car_path)
-            # visualize(raw_xy, trans_xy, ref_xy, delta_xy)
+            visualize(raw_xy, trans_xy, ref_xy, delta_xy)
     delta_list = np.array(delta_list)
     print('mean: ', delta_list.mean(), ', var: ', delta_list.var(), ', max: ', delta_list.max())
     print('all time: ', time.time()-start_t)

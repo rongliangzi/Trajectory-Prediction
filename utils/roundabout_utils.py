@@ -310,9 +310,9 @@ def rotate_crop_2path_fig(ref_paths, path1, path2, theta, interaction_info, save
     xp2 = [p[0] for p in v2[start2:end2]]
     yp2 = [p[1] for p in v2[start2:end2]]
 
-    d = 6  # fig size
-    r = 30  # range of x and y
-    dpi = 8
+    d = 10  # fig size
+    r = 20  # range of x and y
+    dpi = 20
     fig, axes = plt.subplots(1, 1, figsize=(d, d), dpi=dpi)
     # set bg to black
     axes.patch.set_facecolor("k")

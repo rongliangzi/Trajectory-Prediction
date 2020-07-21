@@ -95,34 +95,33 @@ if __name__ == '__main__':
         pickle_file.close()
 
     ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
-    pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
-    pickle.dump(ref_point_frenet, pickle_file)
-    pickle_file.close()
-    if os.path.exists('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'rb')
-        csv_data = pickle.load(pickle_file)
-        pickle_file.close()
-    else:
-        csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'wb')
-        pickle.dump(csv_data, pickle_file)
-        pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
+    # pickle.dump(ref_point_frenet, pickle_file)
+    # pickle_file.close()
+    # if os.path.exists('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl'):
+    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'rb')
+    #     csv_data = pickle.load(pickle_file)
+    #     pickle_file.close()
+    # else:
+    #     csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
+    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'wb')
+    #     pickle.dump(csv_data, pickle_file)
+    #     pickle_file.close()
     # from 0.2 to 0.05, 4 times denser
     MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30, insert_k=4)
-    pickle_file = open('D:/Dev/UCB task/pickle/MA/interaction_MA.pkl', 'wb')
-    pickle.dump(MA_interactions, pickle_file)
-    pickle_file.close()
+    # pickle_file = open('D:/Dev/UCB task/pickle/MA/interaction_MA.pkl', 'wb')
+    # pickle.dump(MA_interactions, pickle_file)
+    # pickle_file.close()
     # visualize the interactions with background
     # save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
     #                          'D:/Dev/UCB task/intersection_figs/roundabout_MA/')
     # generate interaction figures
-    img_save_dir = 'D:/Dev/UCB task/intersection_figs/roundabout_MA_crop/'
+    img_save_dir = 'D:/Dev/UCB task/intersection_figs/high-res_roundabout_MA_crop/'
     rotate_n = 0
-    # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet,
-    #                       img_save_dir, rotate_n)
+    crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet, img_save_dir, rotate_n)
     # save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_MA/',
     #                            (955, 1105), (945, 1055))
-    save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
+    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
     # save edge info
     # for k, v in csv_data.items():
     #     print(k)
