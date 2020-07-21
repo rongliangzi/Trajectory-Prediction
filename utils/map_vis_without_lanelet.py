@@ -106,7 +106,7 @@ def link_road(points):
     return points
 
 
-def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
+def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin, scene=''):
 
     assert isinstance(axes, matplotlib.axes.Axes)
 
@@ -197,52 +197,121 @@ def draw_map_without_lanelet(filename, axes, lat_origin, lon_origin):
     mdis = 25
     for i, road in enumerate(road_points):
         # print(road[0][0], min_x, max_x)
-        # plt.scatter(road[0][0], road[0][1], zorder=30)
+        plt.scatter(road[0][0], road[0][1], zorder=30)
+        plt.scatter(road[-1][0], road[-1][1], zorder=30, c='r', alpha=0.5)
         pre = None
         post = None
         corner_x = None
         corner_y = None
         if dis(road[0], road[-1]) < 5:
             continue
-        if road[0][0]-min_x < mdis:
-            corner_x = min_x
-            y = (road[1][1]-road[0][1])/(road[1][0]-road[0][0])*(corner_x-road[1][0])+road[1][1]
-            pre = [[min_x, y]]
+        left1 = road[0][0] - min_x
+        right1 = max_x - road[0][0]
+        top1 = max_y - road[0][1]
+        bottom1 = road[0][1] - min_y
+        min_dis1 = min([left1, right1, top1, bottom1])
 
-        elif max_x - road[0][0] < mdis:
-            corner_x = max_x
-            y = (road[1][1] - road[0][1]) / (road[1][0] - road[0][0]) * (corner_x - road[1][0]) + road[1][1]
-            pre = [[max_x, y]]
+        left2 = road[-1][0] - min_x
+        right2 = max_x - road[-1][0]
+        top2 = max_y - road[-1][1]
+        bottom2 = road[-1][1] - min_y
+        min_dis2 = min([left2, right2, top2, bottom2])
+        if abs((road[1][1] - road[0][1]) / (road[1][0] - road[0][0])) > 10:
+            if road[0][1] > road[1][1]:
+                corner_y = max_y
+                if top1 < mdis:
+                    x = (road[1][0] - road[0][0]) / (road[1][1] - road[0][1]) * (corner_y - road[1][1]) + road[1][0]
+                    pre = [[x, max_y]]
+                else:
+                    pre = [[road[0][0], max_y]]
+            else:
+                corner_y = min_y
+                if bottom1 < mdis:
+                    x = (road[1][0] - road[0][0]) / (road[1][1] - road[0][1]) * (corner_y - road[1][1]) + road[1][0]
+                    pre = [[x, min_y]]
+                else:
+                    pre = [[road[0][0], min_y]]
+        else:
+            if left1 == min_dis1:
+                corner_x = min_x
+                if left1 < mdis:
+                    y = (road[1][1]-road[0][1])/(road[1][0]-road[0][0])*(corner_x-road[1][0])+road[1][1]
+                    pre = [[min_x, y]]
+                else:
+                    pre = [[min_x, road[0][1]]]
 
-        elif road[0][1] - min_y < mdis:
-            corner_y = min_y
-            x = (road[1][0] - road[0][0])/(road[1][1] - road[0][1])*(corner_y-road[1][1])+road[1][0]
-            pre = [[x, min_y]]
+            elif right1 == min_dis1:
+                corner_x = max_x
+                if right1 < mdis:
+                    y = (road[1][1] - road[0][1]) / (road[1][0] - road[0][0]) * (corner_x - road[1][0]) + road[1][1]
+                    pre = [[max_x, y]]
+                else:
+                    pre = [[max_x, road[0][1]]]
 
-        elif max_y - road[0][1] < mdis:
-            corner_y = max_y
-            x = (road[1][0] - road[0][0]) / (road[1][1] - road[0][1]) * (corner_y - road[1][1]) + road[1][0]
-            pre = [[x, max_y]]
+            elif bottom1 == min_dis1:
+                corner_y = min_y
+                if bottom1 < mdis:
+                    x = (road[1][0] - road[0][0])/(road[1][1] - road[0][1])*(corner_y-road[1][1])+road[1][0]
+                    pre = [[x, min_y]]
+                else:
+                    pre = [[road[0][0], min_y]]
 
-        # plt.scatter(road[-1][0], road[-1][1])
-        if road[-1][0] - min_x < mdis:
-            corner_x = min_x
-            y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
-            post = [[min_x, y]]
-        elif max_x - road[-1][0] < mdis:
-            corner_x = max_x
-            y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
-            post = [[max_x, y]]
+            elif top1 == min_dis1:
+                corner_y = max_y
+                if top1 < mdis:
+                    x = (road[1][0] - road[0][0]) / (road[1][1] - road[0][1]) * (corner_y - road[1][1]) + road[1][0]
+                    pre = [[x, max_y]]
+                else:
+                    pre = [[road[0][0], max_y]]
+        # last
+        if abs((road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0])) > 10:
+            if road[-1][1] > road[-2][1]:
+                corner_y = max_y
+                if top2 < mdis:
+                    x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][
+                        0]
+                    post = [[x, max_y]]
+                else:
+                    post = [[road[-1][0], max_y]]
+            else:
+                corner_y = min_y
+                if bottom2 < mdis:
+                    x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][
+                        0]
+                    post = [[x, min_y]]
+                else:
+                    post = [[road[-1][0], min_y]]
+        else:
+            if left2 == min_dis2:
+                corner_x = min_x
+                if left2 < mdis:
+                    y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
+                    post = [[min_x, y]]
+                else:
+                    post = [[min_x, road[-1][1]]]
+            elif right2 == min_dis2:
+                corner_x = max_x
+                if right2 < mdis:
+                    y = (road[-2][1] - road[-1][1]) / (road[-2][0] - road[-1][0]) * (corner_x - road[-2][0]) + road[-2][1]
+                    post = [[max_x, y]]
+                else:
+                    post = [[max_x, road[-1][1]]]
 
-        elif road[-1][1] - min_y < mdis:
-            corner_y = min_y
-            x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
-            post = [[x, min_y]]
+            elif bottom2 == min_dis2:
+                corner_y = min_y
+                if bottom2 < mdis:
+                    x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
+                    post = [[x, min_y]]
+                else:
+                    post = [[road[-1][0], min_y]]
 
-        elif max_y - road[-1][1] < mdis:
-            corner_y = max_y
-            x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
-            post = [[x, max_y]]
+            elif top2 == min_dis2:
+                corner_y = max_y
+                if top2 < mdis:
+                    x = (road[-2][0] - road[-1][0]) / (road[-2][1] - road[-1][1]) * (corner_y - road[-2][1]) + road[-2][0]
+                    post = [[x, max_y]]
+                else:
+                    post = [[road[-1][0], max_y]]
 
         if pre:
             road_points[i] = pre + road_points[i]

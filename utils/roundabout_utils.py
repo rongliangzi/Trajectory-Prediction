@@ -111,7 +111,7 @@ def plot_raw_ref_path(map_file, all_points, circle_point):
     plt.show()
 
 
-def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
+def plot_ref_path(map_file, ref_path_points, starting_area_dict=None, end_area_dict=None):
     fig, axes = plt.subplots(1, 1)
     map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
     keys = sorted(ref_path_points.keys())
@@ -120,7 +120,8 @@ def plot_ref_path(map_file, ref_path_points, starting_area_dict, end_area_dict):
         xp = [p[0] for p in v]
         yp = [p[1] for p in v]
         plt.plot(xp, yp, linewidth=2)
-    plot_start_end_area(axes, starting_area_dict, end_area_dict)
+    if starting_area_dict and end_area_dict:
+        plot_start_end_area(axes, starting_area_dict, end_area_dict)
     fig.canvas.mpl_connect('button_press_event', on_press)
     plt.legend()
     plt.show()

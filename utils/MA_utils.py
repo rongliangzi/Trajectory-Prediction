@@ -310,3 +310,16 @@ def get_defined_ref_paths(defined_file, csv_dir, x_start, y_start):
                     ref_path_y = ln_func(coef, ref_path_x)
             ref_paths[ref_path_id] = [ref_path_x, ref_path_y, None, None, None]
     return ref_paths, csv_dict
+
+
+def plot_ref_path(map_file, ref_path_points):
+    fig, axes = plt.subplots(1, 1)
+    map_vis_without_lanelet.draw_map_without_lanelet(map_file, axes, 0, 0)
+    keys = sorted(ref_path_points.keys())
+    for k in keys:
+        v = ref_path_points[k]
+        xp = [p[0] for p in v]
+        yp = [p[1] for p in v]
+        plt.plot(xp, yp, linewidth=2)
+    plt.legend()
+    plt.show()

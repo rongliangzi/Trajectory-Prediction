@@ -1,18 +1,19 @@
 from utils.EP_R_utils import *
 from utils.EP_T_utils import get_track_label, visualize_ref_path
 from utils.roundabout_utils import fix_ref_path, save_interaction_bg_figs, save_complete_ref_path_fig,\
-    crop_interaction_figs, ref_paths2frenet, save_ts_theta, get_csv_edges
+    crop_interaction_figs, ref_paths2frenet, save_ts_theta, get_csv_edges, plot_ref_path
 import pickle
 
 
 if __name__ == '__main__':
-    func_file = 'D:/Dev/UCB task/Roundabout_EP_final/ref_path_funcs.txt'
+    func_file = 'D:/Dev/TrajPred/Roundabout_EP_final/ref_path_funcs.txt'
     map_path = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/DR_USA_Roundabout_EP.osm'
     EPR_ref_path_points = read_funcs(func_file)
     insert_k = 10
     # raw = EPR_ref_path_points['3-9']
     EPR_ref_path_points = fix_ref_path(EPR_ref_path_points, 'EPR', insert_k=insert_k, max_dis=2e-2)
     # visualize_ref_path(EPR_ref_path_points['3-9'], raw, map_path)
+    plot_ref_path(map_path, EPR_ref_path_points)
     EPR_interaction_points = {'1-4_1-6': (((976.25, 1013.14), 'split_0'),),
                               '1-4_1-9': (((976.25, 1013.14), 'split_0'),),
                               '1-4_10-2': (((970.28, 1034.54), 'crossing_0'),),
@@ -133,59 +134,59 @@ if __name__ == '__main__':
                               '7-9_8-9': (((1002.7, 1008.3), 'merging_0'),),
                               }
 
-    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_xy_EPR.pkl', 'wb')
+    # pickle_file = open('D:/Dev/TrajPred/pickle/EPR/ref_path_xy_EPR.pkl', 'wb')
     # pickle.dump(EPR_ref_path_points, pickle_file)
     # pickle_file.close()
 
-    ref_point_frenet = ref_paths2frenet(EPR_ref_path_points)
-    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/ref_path_frenet_EPR.pkl', 'wb')
+    # ref_point_frenet = ref_paths2frenet(EPR_ref_path_points)
+    # pickle_file = open('D:/Dev/TrajPred/pickle/EPR/ref_path_frenet_EPR.pkl', 'wb')
     # pickle.dump(ref_point_frenet, pickle_file)
     # pickle_file.close()
 
-    EPR_interactions = dict()
-    for k, vs in EPR_interaction_points.items():
-        path1 = k.split('_')[0]
-        path2 = k.split('_')[1]
-        if path1 not in EPR_interactions.keys():
-            EPR_interactions[path1] = dict()
-        if path2 not in EPR_interactions.keys():
-            EPR_interactions[path2] = dict()
-        EPR_interactions[path1][path2] = []
-        EPR_interactions[path2][path1] = []
-        for v in vs:
-            dis = cal_dis(np.array([list(v[0])]), np.array(EPR_ref_path_points[path1]))
-            id1 = np.argmin(dis, axis=1)
-            first_id = id1[0]
-            dis2 = cal_dis(np.array([list(v[0])]), np.array(EPR_ref_path_points[path2]))
-            id2 = np.argmin(dis2, axis=1)
-            second_id = id2[0]
-            # print(v[0], EPR_ref_path_points[path1][first_id], EPR_ref_path_points[path2][second_id])
-            EPR_interactions[path1][path2].append((v[0], first_id, second_id, v[1]))
-            EPR_interactions[path2][path1].append((v[0], second_id, first_id, v[1]))
-    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/interaction_EPR.pkl', 'wb')
+    # EPR_interactions = dict()
+    # for k, vs in EPR_interaction_points.items():
+    #     path1 = k.split('_')[0]
+    #     path2 = k.split('_')[1]
+    #     if path1 not in EPR_interactions.keys():
+    #         EPR_interactions[path1] = dict()
+    #     if path2 not in EPR_interactions.keys():
+    #         EPR_interactions[path2] = dict()
+    #     EPR_interactions[path1][path2] = []
+    #     EPR_interactions[path2][path1] = []
+    #     for v in vs:
+    #         dis = cal_dis(np.array([list(v[0])]), np.array(EPR_ref_path_points[path1]))
+    #         id1 = np.argmin(dis, axis=1)
+    #         first_id = id1[0]
+    #         dis2 = cal_dis(np.array([list(v[0])]), np.array(EPR_ref_path_points[path2]))
+    #         id2 = np.argmin(dis2, axis=1)
+    #         second_id = id2[0]
+    #         # print(v[0], EPR_ref_path_points[path1][first_id], EPR_ref_path_points[path2][second_id])
+    #         EPR_interactions[path1][path2].append((v[0], first_id, second_id, v[1]))
+    #         EPR_interactions[path2][path1].append((v[0], second_id, first_id, v[1]))
+    # pickle_file = open('D:/Dev/TrajPred/pickle/EPR/interaction_EPR.pkl', 'wb')
     # pickle.dump(EPR_interactions, pickle_file)
     # pickle_file.close()
-    fig_dir = 'D:/Dev/UCB task/intersection_figs/'
+    fig_dir = 'D:/Dev/TrajPred/intersection_figs/'
     # save_interaction_bg_figs(EPR_ref_path_points, EPR_interactions, map_path, fig_dir+'roundabout_EPR/')
 
     # generate intersection figures
     img_save_dir = fig_dir + 'high-res_roundabout_EPR_crop/'
     rotate_n = 0
-    crop_interaction_figs(EPR_ref_path_points, EPR_interactions, ref_point_frenet, img_save_dir, rotate_n)
+    # crop_interaction_figs(EPR_ref_path_points, EPR_interactions, ref_point_frenet, img_save_dir, rotate_n)
     # xs = 950
     # ys = 960
     # save_complete_ref_path_fig(EPR_ref_path_points, fig_dir+'/single_EPR/', (xs, 1030), (ys, 1060))
-    # csv_data = get_track_label('D:/Dev/UCB task/Roundabout_EP_final/track_R/',
+    # csv_data = get_track_label('D:/Dev/TrajPred/Roundabout_EP_final/track_R/',
     #                            EPR_ref_path_points, ref_point_frenet)
-    # pickle_file = open('D:/Dev/UCB task/pickle/EPR/track_path_frenet_EPR.pkl', 'wb')
+    # pickle_file = open('D:/Dev/TrajPred/pickle/EPR/track_path_frenet_EPR.pkl', 'wb')
     # pickle.dump(csv_data, pickle_file)
     # pickle_file.close()
-    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/EPR/ts_theta_EPR.pkl')
+    # save_ts_theta(csv_data, 'D:/Dev/TrajPred/pickle/EPR/ts_theta_EPR.pkl')
     # # save edge info
     # for k, v in csv_data.items():
     #     print(k)
     #     split_edges = get_csv_edges(v, EPR_interactions, ref_point_frenet, k,
     #                                 img_save_dir + k + '/', EPR_ref_path_points)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/EPR/edges_EPR_{}.pkl'.format(k), 'wb')
+    #     pickle_file = open('D:/Dev/TrajPred/pickle/EPR/edges_EPR_{}.pkl'.format(k), 'wb')
     #     pickle.dump(split_edges, pickle_file)
     #     pickle_file.close()

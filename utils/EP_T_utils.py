@@ -47,7 +47,7 @@ def read_funcs(func_file, wp_n=200):
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2)
-                plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
+                plt.savefig('D:/Dev/TrajPred/path_imgs/EP/div_{}.png'.format(line_id))
                 plt.close()
                 div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
             elif line_id in x_range.keys():  #
@@ -67,7 +67,7 @@ def read_funcs(func_file, wp_n=200):
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2)
-                plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
+                plt.savefig('D:/Dev/TrajPred/path_imgs/EP/div_{}.png'.format(line_id))
                 plt.close()
                 div_path_points[line_id] = np.array([[x, y] for x, y in zip(xp, yp)])
             elif line_id in circle_range.keys():
@@ -106,7 +106,7 @@ def read_funcs(func_file, wp_n=200):
                 plt.text(xp[0], yp[0], 'start', fontsize=20)
                 plt.text(xp[-1], yp[-1], 'end', fontsize=20)
                 plt.plot(xp, yp, linewidth=2, zorder=30)
-                plt.savefig('D:/Dev/UCB task/path_imgs/EP/div_{}.png'.format(line_id))
+                plt.savefig('D:/Dev/TrajPred/path_imgs/EP/div_{}.png'.format(line_id))
                 plt.close()
                 if line_id in [21, 23]:
                     xp = xp[::-1]
@@ -175,7 +175,7 @@ def save_it_path(div_path_points, map_file):
         plt.title(ref_path)
         # fig.canvas.mpl_connect('button_press_event', on_press)
         # plt.show()
-        plt.savefig('D:/Dev/UCB task/path_imgs/EP/{}.png'.format(ref_path))
+        plt.savefig('D:/Dev/TrajPred/path_imgs/EP/{}.png'.format(ref_path))
         plt.close()
         ref_path_points[ref_path] = xy_p
     return ref_path_points

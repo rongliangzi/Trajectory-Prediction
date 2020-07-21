@@ -1,5 +1,5 @@
 from utils.MA_utils import *
-from utils.roundabout_utils import plot_ref_path, ref_paths2frenet, \
+from utils.roundabout_utils import ref_paths2frenet, \
     save_interaction_bg_figs, crop_interaction_figs, get_csv_edges, save_complete_ref_path_fig, save_ts_theta
 import pickle
 import json
@@ -68,60 +68,60 @@ if __name__ == '__main__':
     dir_name = 'DR_USA_Intersection_MA/'
     # plot_ref_path(map_dir+map_name, {}, start_areas, end_areas)
 
-    if os.path.exists('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl') and \
-            os.path.exists('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl') and \
-            os.path.exists('D:/Dev/UCB task/pickle/MA/rare_paths.pkl'):
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl', 'rb')
+    if os.path.exists('D:/Dev/TrajPred/pickle/MA/ref_path_xy_MA.pkl') and \
+            os.path.exists('D:/Dev/TrajPred/pickle/MA/MA_csv_dict.pkl') and \
+            os.path.exists('D:/Dev/TrajPred/pickle/MA/rare_paths.pkl'):
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/ref_path_xy_MA.pkl', 'rb')
         MA_ref_path_points = pickle.load(pickle_file)
         pickle_file.close()
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'rb')
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/MA_csv_dict.pkl', 'rb')
         csv_dict = pickle.load(pickle_file)
         pickle_file.close()
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/rare_paths.pkl', 'rb')
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/rare_paths.pkl', 'rb')
         rare_paths = pickle.load(pickle_file)
         pickle_file.close()
     else:
         # MA_ref_path_points[path name]: (x,2) array
         MA_ref_path_points, csv_dict, rare_paths = get_ref_paths(base_path, dir_name, start_areas,
                                                                  end_areas, x_s, y_s, save_img=True)
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_xy_MA.pkl', 'wb')
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/ref_path_xy_MA.pkl', 'wb')
         pickle.dump(MA_ref_path_points, pickle_file)
         pickle_file.close()
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/MA_csv_dict.pkl', 'wb')
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/MA_csv_dict.pkl', 'wb')
         pickle.dump(csv_dict, pickle_file)
         pickle_file.close()
-        pickle_file = open('D:/Dev/UCB task/pickle/MA/rare_paths.pkl', 'wb')
+        pickle_file = open('D:/Dev/TrajPred/pickle/MA/rare_paths.pkl', 'wb')
         pickle.dump(rare_paths, pickle_file)
         pickle_file.close()
-
-    ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
-    # pickle_file = open('D:/Dev/UCB task/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
+    plot_ref_path(map_dir + map_name, MA_ref_path_points)
+    # ref_point_frenet = ref_paths2frenet(MA_ref_path_points)
+    # pickle_file = open('D:/Dev/TrajPred/pickle/MA/ref_path_frenet_MA.pkl', 'wb')
     # pickle.dump(ref_point_frenet, pickle_file)
     # pickle_file.close()
-    # if os.path.exists('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl'):
-    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'rb')
+    # if os.path.exists('D:/Dev/TrajPred/pickle/MA/track_path_frenet_MA.pkl'):
+    #     pickle_file = open('D:/Dev/TrajPred/pickle/MA/track_path_frenet_MA.pkl', 'rb')
     #     csv_data = pickle.load(pickle_file)
     #     pickle_file.close()
     # else:
     #     csv_data = get_track_label(csv_dict, MA_ref_path_points, ref_point_frenet, rare_paths)
-    #     pickle_file = open('D:/Dev/UCB task/pickle/MA/track_path_frenet_MA.pkl', 'wb')
+    #     pickle_file = open('D:/Dev/TrajPred/pickle/MA/track_path_frenet_MA.pkl', 'wb')
     #     pickle.dump(csv_data, pickle_file)
     #     pickle_file.close()
     # from 0.2 to 0.05, 4 times denser
-    MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30, insert_k=4)
-    # pickle_file = open('D:/Dev/UCB task/pickle/MA/interaction_MA.pkl', 'wb')
+    # MA_interactions = find_ma_interactions(MA_ref_path_points, th=1, skip=30, insert_k=4)
+    # pickle_file = open('D:/Dev/TrajPred/pickle/MA/interaction_MA.pkl', 'wb')
     # pickle.dump(MA_interactions, pickle_file)
     # pickle_file.close()
     # visualize the interactions with background
     # save_interaction_bg_figs(MA_ref_path_points, MA_interactions, map_dir + map_name,
-    #                          'D:/Dev/UCB task/intersection_figs/roundabout_MA/')
+    #                          'D:/Dev/TrajPred/intersection_figs/roundabout_MA/')
     # generate interaction figures
-    img_save_dir = 'D:/Dev/UCB task/intersection_figs/high-res_roundabout_MA_crop/'
+    img_save_dir = 'D:/Dev/TrajPred/intersection_figs/high-res_roundabout_MA_crop/'
     rotate_n = 0
-    crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet, img_save_dir, rotate_n)
-    # save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/UCB task/intersection_figs/single_MA/',
+    # crop_interaction_figs(MA_ref_path_points, MA_interactions, ref_point_frenet, img_save_dir, rotate_n)
+    # save_complete_ref_path_fig(MA_ref_path_points, 'D:/Dev/TrajPred/intersection_figs/single_MA/',
     #                            (955, 1105), (945, 1055))
-    # save_ts_theta(csv_data, 'D:/Dev/UCB task/pickle/MA/ts_theta_MA.pkl')
+    # save_ts_theta(csv_data, 'D:/Dev/TrajPred/pickle/MA/ts_theta_MA.pkl')
     # save edge info
     # for k, v in csv_data.items():
     #     print(k)
@@ -138,10 +138,10 @@ if __name__ == '__main__':
     #             split_dict = dict()
     #             for key in split_keys:
     #                 split_dict[key] = split_edges[key]
-    #             pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}_{}.pkl'.format(k, i), 'wb')
+    #             pickle_file = open('D:/Dev/TrajPred/pickle/MA/edges_MA_{}_{}.pkl'.format(k, i), 'wb')
     #             pickle.dump(split_dict, pickle_file)
     #             pickle_file.close()
     #     else:
-    #         pickle_file = open('D:/Dev/UCB task/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
+    #         pickle_file = open('D:/Dev/TrajPred/pickle/MA/edges_MA_{}.pkl'.format(k), 'wb')
     #         pickle.dump(split_edges, pickle_file)
     #         pickle_file.close()

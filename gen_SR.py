@@ -61,7 +61,7 @@ def plot_ref_path_divided(map_file, ref_path_points):
 if __name__ == '__main__':
     map_dir = 'D:/Downloads/INTERACTION-Dataset-DR-v1_0/maps/'
     map_name = "DR_USA_Roundabout_SR.osm"
-    dataFile = 'D:/Dev/UCB task/Segmented_reference_path_DR_USA_Roundabout_SR.mat'
+    dataFile = 'D:/Dev/TrajPred/Segmented_reference_path_DR_USA_Roundabout_SR.mat'
     mat_data = scio.loadmat(dataFile)
     mat_data = mat_data['Segmented_reference_path']
     all_circle_points = mat_data['circle_merge_point'][0]
